@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Ops — The Operating System for IT Vendor Invoices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+/* === RESET & VARIABLES === */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-deep:#060b18;--bg-surface:#0c1425;--bg-card:#111c32;--bg-card-hover:#162038;
+  --border:#1e2d4a;--border-light:#2a3f66;
+  --text-primary:#e8edf5;--text-secondary:#8899b4;--text-muted:#5a6d8a;
+  --accent-cyan:#00d4ff;--accent-blue:#3b82f6;--accent-green:#10b981;
+  --accent-orange:#f59e0b;--accent-red:#ef4444;--accent-purple:#8b5cf6;
+  --gradient-hero:linear-gradient(135deg,#00d4ff 0%,#3b82f6 50%,#8b5cf6 100%);
+  --font-body:'DM Sans',sans-serif;--font-display:'Instrument Serif',serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:12px;--radius-lg:20px;--radius-sm:8px;
+  --shadow:0 4px 24px rgba(0,0,0,0.3);--shadow-lg:0 12px 48px rgba(0,0,0,0.4);
+  --sidebar-width:260px;
+  --transition:0.3s cubic-bezier(0.4,0,0.2,1);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-body);background:var(--bg-deep);color:var(--text-primary);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;color:inherit}
+img{max-width:100%;display:block}
+
+/* === UTILITY === */
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;letter-spacing:0.02em}
+.badge-cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan)}
+.badge-green{background:rgba(16,185,129,0.12);color:var(--accent-green)}
+.badge-orange{background:rgba(245,158,11,0.12);color:var(--accent-orange)}
+.badge-red{background:rgba(239,68,68,0.12);color:var(--accent-red)}
+.badge-purple{background:rgba(139,92,246,0.12);color:var(--accent-purple)}
+
+/* === ANIMATIONS === */
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.15)}50%{box-shadow:0 0 40px rgba(0,212,255,0.3)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes grid-move{0%{transform:translate(0,0)}100%{transform:translate(40px,40px)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes countUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeUp 0.7s ease both}
+.animate-in-delay-1{animation-delay:0.1s}
+.animate-in-delay-2{animation-delay:0.2s}
+.animate-in-delay-3{animation-delay:0.3s}
+.animate-in-delay-4{animation-delay:0.4s}
+.animate-in-delay-5{animation-delay:0.5s}
+
+/* === BUTTONS === */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:var(--radius-sm);font-weight:600;font-size:0.9rem;transition:all var(--transition);letter-spacing:0.01em;position:relative;overflow:hidden}
+.btn-primary{background:var(--gradient-hero);color:#fff;box-shadow:0 4px 20px rgba(0,212,255,0.25)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,212,255,0.35)}
+.btn-secondary{border:1.5px solid var(--border-light);color:var(--text-primary);background:rgba(255,255,255,0.03)}
+.btn-secondary:hover{border-color:var(--accent-cyan);background:rgba(0,212,255,0.05);transform:translateY(-2px)}
+.btn-sm{padding:8px 18px;font-size:0.82rem;border-radius:var(--radius-sm)}
+.btn-icon{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);border:1px solid var(--border);transition:all var(--transition)}
+.btn-icon:hover{border-color:var(--accent-cyan);background:rgba(0,212,255,0.05)}
+.btn-ghost{color:var(--text-secondary);padding:12px 28px;border-radius:var(--radius-sm);font-weight:600;font-size:0.9rem;transition:all var(--transition)}
+.btn-ghost:hover{color:var(--text-primary);background:rgba(255,255,255,0.05)}
+
+/* === NAVIGATION === */
+.nav-landing{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 0;transition:all var(--transition);backdrop-filter:blur(0px);background:transparent}
+.nav-landing.scrolled{background:rgba(6,11,24,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.15rem}
+.nav-logo .logo-mark{width:36px;height:36px;background:var(--gradient-hero);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;color:#fff;letter-spacing:-0.02em}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{font-size:0.88rem;color:var(--text-secondary);transition:color var(--transition);font-weight:500}
+.nav-links a:hover{color:var(--text-primary)}
+.nav-actions{display:flex;align-items:center;gap:12px}
+.nav-mobile-toggle{display:none;width:40px;height:40px;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border)}
+.nav-mobile-toggle span{display:block;width:20px;height:2px;background:var(--text-primary);position:relative;transition:all 0.3s}
+.nav-mobile-toggle span::before,.nav-mobile-toggle span::after{content:'';position:absolute;width:100%;height:100%;background:inherit;left:0;transition:inherit}
+.nav-mobile-toggle span::before{top:-6px}
+.nav-mobile-toggle span::after{top:6px}
+@media(max-width:768px){
+  .nav-links,.nav-actions .btn{display:none}
+  .nav-mobile-toggle{display:flex}
+}
+
+/* === LANG SWITCHER === */
+.lang-switcher{position:relative;display:inline-flex}
+.lang-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.03);font-size:0.82rem;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:all var(--transition)}
+.lang-btn:hover{border-color:var(--accent-cyan);color:var(--text-primary)}
+.lang-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;min-width:120px;box-shadow:var(--shadow-lg);z-index:1000;display:none}
+.lang-dropdown.open{display:block}
+.lang-option{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.82rem;color:var(--text-secondary);cursor:pointer;transition:all var(--transition);width:100%;border:none;background:none}
+.lang-option:hover{background:rgba(0,212,255,0.05);color:var(--text-primary)}
+.lang-option.active{color:var(--accent-cyan)}
+.featured-popular-en .pricing-card.featured::after{content:'POPULAR'}
+.featured-popular-fr .pricing-card.featured::after{content:'POPULAIRE'}
+.featured-popular-es .pricing-card.featured::after{content:'POPULAR'}
+
+/* === HERO === */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding:120px 0 80px}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(0,212,255,0.08),transparent 70%),radial-gradient(ellipse 60% 50% at 80% 60%,rgba(139,92,246,0.06),transparent 60%)}
+.hero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");opacity:0.03;pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(30,45,74,0.15) 1px,transparent 1px),linear-gradient(90deg,rgba(30,45,74,0.15) 1px,transparent 1px);background-size:40px 40px;animation:grid-move 20s linear infinite;mask-image:radial-gradient(ellipse at center,rgba(0,0,0,0.4),transparent 70%)}
+.hero-content{position:relative;z-index:2;text-align:center;max-width:820px;margin:0 auto}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:30px;border:1px solid var(--border-light);background:rgba(0,212,255,0.05);font-size:0.82rem;color:var(--accent-cyan);font-weight:500;margin-bottom:32px;animation:fadeUp 0.6s ease both}
+.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--accent-green);animation:pulse-glow 2s infinite}
+.hero h1{font-family:var(--font-display);font-size:clamp(2.8rem,6vw,4.5rem);line-height:1.08;font-weight:400;margin-bottom:24px;animation:fadeUp 0.7s ease both;animation-delay:0.1s;letter-spacing:-0.02em}
+.hero h1 em{font-style:italic;background:var(--gradient-hero);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p.hero-sub{font-size:1.15rem;color:var(--text-secondary);max-width:640px;margin:0 auto 40px;animation:fadeUp 0.7s ease both;animation-delay:0.2s;line-height:1.7}
+.hero-ctas{display:flex;align-items:center;justify-content:center;gap:16px;animation:fadeUp 0.7s ease both;animation-delay:0.3s;flex-wrap:wrap}
+.hero-trust-bar{margin-top:40px;animation:fadeUp 0.7s ease both;animation-delay:0.4s;text-align:center}
+.hero-trust-bar .trust-label{font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
+.hero-trust-bar .trust-logos{font-size:0.88rem;color:var(--text-secondary);letter-spacing:0.05em}
+.hero-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;margin-top:56px;animation:fadeUp 0.7s ease both;animation-delay:0.5s}
+.hero-metric{text-align:center;padding:20px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:var(--radius);transition:all var(--transition)}
+.hero-metric:hover{border-color:var(--border-light);background:rgba(0,212,255,0.03)}
+.hero-metric .number{font-family:var(--font-mono);font-size:1.6rem;font-weight:700;color:var(--accent-cyan)}
+.hero-metric .label{font-size:0.78rem;color:var(--text-muted);margin-top:4px}
+@media(max-width:768px){.hero-metrics{grid-template-columns:repeat(2,1fr);gap:16px}}
+
+/* === SECTIONS === */
+section{padding:100px 0;position:relative}
+.section-label{font-family:var(--font-mono);font-size:0.75rem;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:16px}
+.section-title{font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);line-height:1.15;margin-bottom:20px;letter-spacing:-0.01em}
+.section-subtitle{font-size:1.05rem;color:var(--text-secondary);max-width:600px;line-height:1.7}
+.section-center{text-align:center}.section-center .section-subtitle{margin:0 auto}
+
+/* PLACEHOLDER: Social proof, ROI calculator, Problem, Solution, How It Works, Enterprise Features, Pricing, Trust, CTA, Footer CSS will be added via Edit */
+
+/* === SOCIAL PROOF === */
+.social-proof{background:var(--bg-surface)}
+.testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+.testimonial-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;position:relative;transition:all var(--transition)}
+.testimonial-card:hover{border-color:var(--border-light);transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.testimonial-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient-hero);border-radius:var(--radius-lg) var(--radius-lg) 0 0;opacity:0;transition:opacity var(--transition)}
+.testimonial-card:hover::before{opacity:1}
+.testimonial-stars{color:var(--accent-orange);font-size:0.85rem;margin-bottom:16px;letter-spacing:2px}
+.testimonial-quote{font-size:0.92rem;color:var(--text-secondary);line-height:1.7;margin-bottom:24px;font-style:italic}
+.testimonial-author{display:flex;align-items:center;gap:12px}
+.testimonial-avatar{width:40px;height:40px;border-radius:50%;background:var(--gradient-hero);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:#fff;flex-shrink:0}
+.testimonial-info .t-name{font-weight:600;font-size:0.88rem}
+.testimonial-info .t-title{font-size:0.78rem;color:var(--text-muted)}
+@media(max-width:768px){.testimonials-grid{grid-template-columns:1fr}}
+
+/* === ROI CALCULATOR === */
+.roi-section{background:var(--bg-surface)}
+.roi-calculator{margin-top:48px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:48px;position:relative;overflow:hidden}
+.roi-calculator::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,212,255,0.04),transparent 60%);pointer-events:none}
+.roi-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;position:relative;z-index:1}
+.roi-inputs{display:flex;flex-direction:column;gap:28px}
+.roi-input-group label{display:flex;justify-content:space-between;align-items:center;font-size:0.88rem;font-weight:500;margin-bottom:10px}
+.roi-input-group label span{font-family:var(--font-mono);color:var(--accent-cyan);font-size:0.85rem}
+.roi-slider{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;transition:background var(--transition)}
+.roi-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent-cyan);cursor:pointer;box-shadow:0 0 10px rgba(0,212,255,0.3)}
+.roi-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent-cyan);cursor:pointer;border:none}
+.roi-results{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.roi-result-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;transition:all var(--transition)}
+.roi-result-card:hover{border-color:var(--border-light)}
+.roi-result-card .roi-value{font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--accent-green);margin-bottom:4px}
+.roi-result-card .roi-label{font-size:0.78rem;color:var(--text-muted)}
+.roi-result-card.roi-total{grid-column:1/-1;background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(139,92,246,0.05));border-color:var(--accent-cyan)}
+.roi-result-card.roi-total .roi-value{font-size:2rem;color:var(--accent-cyan)}
+.roi-cta{text-align:center;margin-top:24px;position:relative;z-index:1}
+@media(max-width:768px){.roi-grid{grid-template-columns:1fr}.roi-results{grid-template-columns:1fr}}
+
+/* === PROBLEM SECTION === */
+.problems{background:var(--bg-surface)}
+.problems-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:48px}
+.problem-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;transition:all var(--transition);position:relative;overflow:hidden}
+.problem-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-accent);opacity:0;transition:opacity var(--transition)}
+.problem-card:hover{transform:translateY(-4px);border-color:var(--border-light);box-shadow:var(--shadow-lg)}
+.problem-card:hover::before{opacity:1}
+.problem-card:nth-child(1){--card-accent:var(--accent-cyan)}
+.problem-card:nth-child(2){--card-accent:var(--accent-red)}
+.problem-card:nth-child(3){--card-accent:var(--accent-orange)}
+.problem-card:nth-child(4){--card-accent:var(--accent-green)}
+.problem-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:1.3rem}
+.problem-card:nth-child(1) .problem-icon{background:rgba(0,212,255,0.1);color:var(--accent-cyan)}
+.problem-card:nth-child(2) .problem-icon{background:rgba(239,68,68,0.1);color:var(--accent-red)}
+.problem-card:nth-child(3) .problem-icon{background:rgba(245,158,11,0.1);color:var(--accent-orange)}
+.problem-card:nth-child(4) .problem-icon{background:rgba(16,185,129,0.1);color:var(--accent-green)}
+.problem-card h3{font-size:1.15rem;font-weight:700;margin-bottom:10px}
+.problem-card p{font-size:0.9rem;color:var(--text-secondary);line-height:1.6}
+.problem-source{margin-top:32px;text-align:center;font-size:0.78rem;color:var(--text-muted);font-style:italic}
+@media(max-width:768px){.problems-grid{grid-template-columns:1fr}}
+
+/* === SOLUTION === */
+.solution-content{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:48px}
+.solution-visual{position:relative;aspect-ratio:4/3;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.solution-visual::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(0,212,255,0.08),transparent 50%),radial-gradient(circle at 70% 60%,rgba(139,92,246,0.06),transparent 50%)}
+.solution-diagram{position:relative;z-index:1;display:flex;flex-direction:column;gap:16px;padding:32px;width:100%}
+.solution-flow{display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:var(--radius-sm);font-size:0.85rem;font-weight:500;transition:all var(--transition)}
+.solution-flow:hover{background:rgba(0,212,255,0.1);transform:translateX(8px)}
+.solution-flow .flow-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem}
+.solution-flow:nth-child(1) .flow-icon{background:rgba(0,212,255,0.15);color:var(--accent-cyan)}
+.solution-flow:nth-child(2) .flow-icon{background:rgba(59,130,246,0.15);color:var(--accent-blue)}
+.solution-flow:nth-child(3) .flow-icon{background:rgba(139,92,246,0.15);color:var(--accent-purple)}
+.solution-features{display:flex;flex-direction:column;gap:24px}
+.solution-feature{display:flex;gap:16px}
+.solution-feature .feat-marker{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700;background:rgba(0,212,255,0.1);color:var(--accent-cyan);margin-top:2px}
+.solution-feature h4{font-size:1rem;font-weight:600;margin-bottom:6px}
+.solution-feature p{font-size:0.88rem;color:var(--text-secondary);line-height:1.6}
+@media(max-width:768px){.solution-content{grid-template-columns:1fr}}
+
+/* === HOW IT WORKS === */
+.how-it-works{background:var(--bg-surface)}
+.steps-pipeline{display:flex;gap:0;margin-top:48px;position:relative}
+.steps-pipeline::before{content:'';position:absolute;top:40px;left:40px;right:40px;height:2px;background:linear-gradient(90deg,var(--accent-cyan),var(--accent-blue),var(--accent-purple),var(--accent-green),var(--accent-orange));opacity:0.3}
+.step-card{flex:1;text-align:center;padding:0 12px;position:relative}
+.step-number{width:80px;height:80px;margin:0 auto 20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.75rem;font-weight:700;position:relative;z-index:2;border:2px solid var(--border);background:var(--bg-card);transition:all var(--transition)}
+.step-card:hover .step-number{border-color:var(--step-color);box-shadow:0 0 24px rgba(var(--step-rgb),0.2)}
+.step-card:nth-child(1){--step-color:var(--accent-cyan);--step-rgb:0,212,255}
+.step-card:nth-child(2){--step-color:var(--accent-blue);--step-rgb:59,130,246}
+.step-card:nth-child(3){--step-color:var(--accent-purple);--step-rgb:139,92,246}
+.step-card:nth-child(4){--step-color:var(--accent-green);--step-rgb:16,185,129}
+.step-card:nth-child(5){--step-color:var(--accent-orange);--step-rgb:245,158,11}
+.step-number .step-icon{font-size:1.5rem;color:var(--step-color)}
+.step-label{font-family:var(--font-mono);font-size:0.7rem;color:var(--step-color);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.step-card h3{font-size:0.95rem;font-weight:700;margin-bottom:8px}
+.step-card p{font-size:0.8rem;color:var(--text-secondary);line-height:1.5}
+@media(max-width:768px){
+  .steps-pipeline{flex-direction:column;gap:24px}
+  .steps-pipeline::before{display:none}
+}
+
+/* === ENTERPRISE FEATURES === */
+.enterprise-features{background:var(--bg-surface)}
+.enterprise-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+.enterprise-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all var(--transition);position:relative;overflow:hidden}
+.enterprise-card::before{content:'';position:absolute;inset:0;border-radius:var(--radius-lg);padding:1px;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(139,92,246,0.1),transparent 60%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity var(--transition);pointer-events:none}
+.enterprise-card:hover::before{opacity:1}
+.enterprise-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.enterprise-card .ent-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:1.2rem}
+.enterprise-card h3{font-size:1.05rem;font-weight:700;margin-bottom:10px}
+.enterprise-card p{font-size:0.85rem;color:var(--text-secondary);line-height:1.6}
+@media(max-width:768px){.enterprise-grid{grid-template-columns:1fr}}
+
+/* === PRICING === */
+.pricing-toggle-wrap{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:24px;margin-bottom:8px}
+.pricing-toggle-wrap span{font-size:0.88rem;color:var(--text-secondary);font-weight:500}
+.pricing-toggle-wrap span.active-toggle{color:var(--text-primary)}
+.pricing-toggle-pill{width:52px;height:28px;border-radius:14px;background:var(--border);position:relative;cursor:pointer;transition:background var(--transition)}
+.pricing-toggle-pill.annual{background:var(--accent-cyan)}
+.pricing-toggle-pill::after{content:'';position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform var(--transition)}
+.pricing-toggle-pill.annual::after{transform:translateX(24px)}
+.pricing-save-badge{font-size:0.72rem;font-weight:700;color:var(--accent-green);background:rgba(16,185,129,0.12);padding:2px 8px;border-radius:10px}
+.pricing-tracks{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px}
+.pricing-track h3{font-size:1.1rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.pricing-track .track-desc{font-size:0.85rem;color:var(--text-secondary);margin-bottom:24px}
+.pricing-cards{display:flex;flex-direction:column;gap:16px}
+.pricing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;transition:all var(--transition);position:relative}
+.pricing-card:hover{border-color:var(--border-light);transform:translateY(-2px);box-shadow:var(--shadow)}
+.pricing-card.featured{border-color:var(--accent-cyan);background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(59,130,246,0.03))}
+.pricing-card.featured::after{position:absolute;top:12px;right:12px;font-size:0.65rem;font-weight:700;padding:4px 10px;border-radius:12px;background:var(--accent-cyan);color:var(--bg-deep);letter-spacing:0.05em}
+.pricing-card.enterprise-highlight{border-color:var(--accent-purple);background:linear-gradient(135deg,rgba(139,92,246,0.06),rgba(59,130,246,0.03))}
+.pricing-tier{font-family:var(--font-mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent-cyan);margin-bottom:8px}
+.pricing-price{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.pricing-price span{font-size:0.85rem;color:var(--text-muted);font-weight:400}
+.pricing-detail{font-size:0.82rem;color:var(--text-secondary);margin-bottom:16px}
+.pricing-card .btn{width:100%}
+.pricing-enterprise-features{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.pricing-enterprise-features .pef{font-size:0.75rem;padding:4px 10px;border-radius:12px;background:rgba(139,92,246,0.1);color:var(--accent-purple);font-weight:500}
+@media(max-width:768px){.pricing-tracks{grid-template-columns:1fr}}
+
+/* === PRICING FAQ === */
+.pricing-faq{margin-top:72px}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px}
+.faq-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;cursor:pointer;transition:all var(--transition)}
+.faq-item:hover{border-color:var(--border-light)}
+.faq-question{font-weight:600;font-size:0.92rem;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.faq-question svg{flex-shrink:0;color:var(--text-muted);transition:transform var(--transition)}
+.faq-item.open .faq-question svg{transform:rotate(180deg)}
+.faq-answer{font-size:0.85rem;color:var(--text-secondary);line-height:1.7;max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+.faq-item.open .faq-answer{max-height:200px}
+@media(max-width:768px){.faq-grid{grid-template-columns:1fr}}
+
+/* === TRUST SECTION === */
+.trust-section{text-align:center}
+.trust-badges{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:40px}
+.trust-badge-item{display:flex;align-items:center;gap:8px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:0.82rem;font-weight:600;transition:all var(--transition)}
+.trust-badge-item:hover{border-color:var(--border-light)}
+.trust-badge-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700}
+.trust-backed{margin-top:32px;font-size:0.82rem;color:var(--text-muted)}
+.trust-backed span{color:var(--text-secondary);font-weight:500}
+
+/* === CTA SECTION === */
+.cta-section{text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,212,255,0.06),transparent 60%)}
+.cta-box{position:relative;z-index:1;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:64px 48px;max-width:700px;margin:0 auto}
+.cta-box h2{font-family:var(--font-display);font-size:2.2rem;margin-bottom:16px}
+.cta-box p{color:var(--text-secondary);margin-bottom:32px;font-size:1rem}
+.cta-contact{display:flex;justify-content:center;gap:32px;margin-top:24px;flex-wrap:wrap}
+.cta-contact a{display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:0.88rem;transition:color var(--transition)}
+.cta-contact a:hover{color:var(--accent-cyan)}
+
+/* === FOOTER === */
+.footer{border-top:1px solid var(--border);padding:60px 0 40px}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand .footer-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;margin-bottom:12px}
+.footer-brand .footer-logo .logo-mark{width:32px;height:32px;background:var(--gradient-hero);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;color:#fff}
+.footer-brand p{font-size:0.85rem;color:var(--text-secondary);line-height:1.6;max-width:280px}
+.footer-col h4{font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:16px}
+.footer-col a{display:block;font-size:0.85rem;color:var(--text-secondary);padding:4px 0;transition:color var(--transition)}
+.footer-col a:hover{color:var(--accent-cyan)}
+.footer-bottom{border-top:1px solid var(--border);padding-top:24px;text-align:center;font-size:0.78rem;color:var(--text-muted)}
+@media(max-width:768px){.footer-grid{grid-template-columns:1fr 1fr;gap:24px}}
+
+/* === AUTH PAGES === */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative}
+.auth-page::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(0,212,255,0.06),transparent 60%)}
+.auth-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:48px;width:100%;max-width:440px;position:relative;z-index:1;animation:fadeUp 0.5s ease both}
+.auth-card h2{font-family:var(--font-display);font-size:1.8rem;margin-bottom:8px;text-align:center}
+.auth-card .auth-subtitle{text-align:center;color:var(--text-secondary);font-size:0.9rem;margin-bottom:32px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:0.82rem;font-weight:600;margin-bottom:8px;color:var(--text-secondary)}
+.form-group input{width:100%;padding:12px 16px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.9rem;transition:all var(--transition);color:var(--text-primary)}
+.form-group input:focus{outline:none;border-color:var(--accent-cyan);box-shadow:0 0 0 3px rgba(0,212,255,0.1)}
+.form-group input::placeholder{color:var(--text-muted)}
+.auth-card .btn-primary{width:100%;justify-content:center;margin-top:8px;padding:14px}
+.auth-footer{text-align:center;margin-top:24px;font-size:0.85rem;color:var(--text-secondary)}
+.auth-footer a{color:var(--accent-cyan);font-weight:500}
+.auth-back{position:absolute;top:24px;left:24px;z-index:10}
+.auth-lang-wrap{position:absolute;top:24px;right:24px;z-index:10}
+
+/* === DASHBOARD === */
+.dashboard-layout{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-width);background:var(--bg-surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:100;transition:transform 0.3s ease}
+.sidebar-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-header .logo-mark{width:32px;height:32px;background:var(--gradient-hero);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;color:#fff}
+.sidebar-header span{font-weight:700;font-size:1rem}
+.sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.sidebar-nav a{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:var(--radius-sm);font-size:0.88rem;font-weight:500;color:var(--text-secondary);transition:all var(--transition)}
+.sidebar-nav a:hover{background:rgba(0,212,255,0.05);color:var(--text-primary)}
+.sidebar-nav a.active{background:rgba(0,212,255,0.08);color:var(--accent-cyan)}
+.sidebar-nav a .nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 16px}
+.sidebar-footer{padding:16px 12px;border-top:1px solid var(--border)}
+.sidebar-footer a{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:var(--radius-sm);font-size:0.85rem;color:var(--text-muted);transition:all var(--transition)}
+.sidebar-footer a:hover{color:var(--accent-red)}
+.dash-main{flex:1;margin-left:var(--sidebar-width);min-height:100vh}
+.dash-topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(6,11,24,0.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.dash-topbar h1{font-size:1.2rem;font-weight:700}
+.dash-topbar-right{display:flex;align-items:center;gap:16px}
+.dash-search{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;color:var(--text-muted);width:260px;transition:border-color var(--transition)}
+.dash-search:focus-within{border-color:var(--accent-cyan)}
+.dash-search input{background:none;border:none;outline:none;flex:1;color:var(--text-primary);font-size:0.85rem}
+.dash-search input::placeholder{color:var(--text-muted)}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--gradient-hero);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;color:#fff}
+.dash-content{padding:32px}
+.mobile-menu-btn{display:none;width:40px;height:40px;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg-card)}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:32px}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all var(--transition)}
+.kpi-card:hover{border-color:var(--border-light);transform:translateY(-2px)}
+.kpi-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kpi-header .kpi-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.kpi-header .kpi-change{font-size:0.75rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.kpi-value{font-size:1.8rem;font-weight:700;font-family:var(--font-mono);margin-bottom:4px}
+.kpi-label{font-size:0.82rem;color:var(--text-secondary)}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:32px}
+.chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.chart-card h3{font-size:0.95rem;font-weight:600;margin-bottom:20px}
+.chart-wrap{position:relative;height:260px}
+
+/* TABLE */
+.data-table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
+.table-header h3{font-size:0.95rem;font-weight:600}
+.table-actions{display:flex;align-items:center;gap:12px}
+.table-search{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem}
+.table-search input{background:none;border:none;outline:none;color:var(--text-primary);font-size:0.82rem;width:160px}
+.table-search input::placeholder{color:var(--text-muted)}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:12px 24px;font-size:0.75rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border);background:var(--bg-surface)}
+tbody td{padding:14px 24px;font-size:0.88rem;border-bottom:1px solid var(--border)}
+tbody tr{transition:background var(--transition)}
+tbody tr:hover{background:rgba(0,212,255,0.02)}
+tbody tr:last-child td{border-bottom:none}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px}
+.status-processed .status-dot{background:var(--accent-green)}
+.status-pending .status-dot{background:var(--accent-orange)}
+.status-flagged .status-dot{background:var(--accent-red)}
+.status-approved .status-dot{background:var(--accent-green)}
+.status-rejected .status-dot{background:var(--accent-red)}
+
+/* VENDORS */
+.vendors-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.vendor-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all var(--transition)}
+.vendor-card:hover{border-color:var(--border-light);transform:translateY(-2px)}
+.vendor-card .vendor-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;margin-bottom:16px}
+.vendor-card h4{font-size:0.95rem;font-weight:600;margin-bottom:4px}
+.vendor-card .vendor-cat{font-size:0.78rem;color:var(--text-muted);margin-bottom:16px}
+.vendor-meta{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--border)}
+.vendor-meta .amount{font-family:var(--font-mono);font-weight:600;font-size:0.95rem}
+.vendor-meta .invoices{font-size:0.78rem;color:var(--text-secondary)}
+
+/* COMPLIANCE */
+.compliance-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.compliance-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px}
+.compliance-card h3{font-size:0.95rem;font-weight:600;margin-bottom:20px}
+.compliance-meter{height:8px;background:var(--bg-surface);border-radius:4px;margin-bottom:12px;overflow:hidden}
+.compliance-meter .fill{height:100%;border-radius:4px;transition:width 1s ease}
+.compliance-stat{display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-secondary)}
+.compliance-checklist{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.check-item{display:flex;align-items:center;gap:12px;font-size:0.88rem}
+.check-item .check-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;flex-shrink:0}
+.check-item.done .check-icon{background:rgba(16,185,129,0.12);color:var(--accent-green)}
+.check-item.pending .check-icon{background:rgba(245,158,11,0.12);color:var(--accent-orange)}
+
+/* SETTINGS */
+.settings-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:20px}
+.settings-section h3{font-size:0.95rem;font-weight:600;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(30,45,74,0.3)}
+.settings-row:last-child{border-bottom:none}
+.settings-row .setting-info h4{font-size:0.9rem;font-weight:500;margin-bottom:2px}
+.settings-row .setting-info p{font-size:0.8rem;color:var(--text-muted)}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--border);position:relative;cursor:pointer;transition:background var(--transition)}
+.toggle.on{background:var(--accent-cyan)}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform var(--transition)}
+.toggle.on::after{transform:translateX(20px)}
+
+/* APPROVALS */
+.approval-rules{margin-bottom:32px}
+.approval-rule-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px}
+.approval-rule-row .rule-condition{font-size:0.88rem;font-weight:500}
+.approval-rule-row .rule-action{font-size:0.82rem;color:var(--text-secondary)}
+.pending-approval-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:all var(--transition)}
+.pending-approval-card:hover{border-color:var(--border-light)}
+.pending-approval-card .pa-info h4{font-size:0.92rem;font-weight:600;margin-bottom:4px}
+.pending-approval-card .pa-info p{font-size:0.82rem;color:var(--text-secondary)}
+.pending-approval-card .pa-actions{display:flex;gap:8px}
+
+/* API KEYS */
+.apikey-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:all var(--transition)}
+.apikey-card:hover{border-color:var(--border-light)}
+.apikey-info h4{font-size:0.92rem;font-weight:600;margin-bottom:4px}
+.apikey-info .key-prefix{font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)}
+.apikey-meta{display:flex;align-items:center;gap:24px;font-size:0.82rem;color:var(--text-secondary)}
+
+/* INTEGRATIONS */
+.integrations-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.integration-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;transition:all var(--transition)}
+.integration-card:hover{border-color:var(--border-light)}
+.integration-card .int-left{display:flex;align-items:center;gap:14px}
+.integration-card .int-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0}
+.integration-card .int-name{font-weight:600;font-size:0.9rem;margin-bottom:2px}
+.integration-card .int-desc{font-size:0.78rem;color:var(--text-muted)}
+.integration-status{font-size:0.75rem;font-weight:600;padding:4px 12px;border-radius:12px}
+.integration-status.connected{background:rgba(16,185,129,0.12);color:var(--accent-green)}
+.integration-status.available{background:rgba(245,158,11,0.12);color:var(--accent-orange)}
+
+/* RESPONSIVE DASHBOARD */
+@media(max-width:1024px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.vendors-grid{grid-template-columns:repeat(2,1fr)}.compliance-grid{grid-template-columns:1fr}.integrations-grid{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .dash-main{margin-left:0}
+  .mobile-menu-btn{display:flex}
+  .kpi-grid{grid-template-columns:1fr}
+  .vendors-grid{grid-template-columns:1fr}
+  .dash-content{padding:20px}
+  .dash-topbar{padding:12px 20px}
+}
+
+/* Hide pages */
+.page{display:none}
+.page.active{display:block}
+</style>
+</head>
+<body class="featured-popular-en">
+
+<div id="landing-page" class="page active">
+
+<!-- NAV -->
+<nav class="nav-landing" id="nav">
+<div class="container nav-inner">
+  <a href="#" class="nav-logo" onclick="showPage('landing')">
+    <div class="logo-mark">IO</div>
+    <span>Invoice Ops</span>
+  </a>
+  <div class="nav-links">
+    <a href="#problem" data-i18n="nav_problem">Problem</a>
+    <a href="#solution" data-i18n="nav_solution">Solution</a>
+    <a href="#how-it-works" data-i18n="nav_how">How It Works</a>
+    <a href="#pricing" data-i18n="nav_pricing">Pricing</a>
+  </div>
+  <div class="lang-switcher" id="lang-switcher-landing">
+    <button class="lang-btn" onclick="toggleLangDropdown('landing')"><span class="lang-flag" id="lang-flag-landing">EN</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="lang-dropdown" id="lang-dropdown-landing">
+      <button class="lang-option active" data-lang="en" onclick="setLang('en')">EN English</button>
+      <button class="lang-option" data-lang="fr" onclick="setLang('fr')">FR Francais</button>
+      <button class="lang-option" data-lang="es" onclick="setLang('es')">ES Espanol</button>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-secondary btn-sm" onclick="showPage('login')" data-i18n="nav_login">Log in</button>
+    <button class="btn btn-primary btn-sm" onclick="showPage('signup')" data-i18n="nav_trial">Start Free Trial</button>
+  </div>
+  <button class="nav-mobile-toggle" onclick="this.classList.toggle('open')">
+    <span></span>
+  </button>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+<div class="hero-grid"></div>
+<div class="container hero-content">
+  <div class="hero-badge"><span class="dot"></span> <span data-i18n="hero_badge">Trusted by 120+ FinOps teams across Europe</span></div>
+  <h1 data-i18n="hero_headline">The Operating System for <em>IT Vendor Invoices</em></h1>
+  <p class="hero-sub" data-i18n="hero_subtitle">Close the 40% IT spend visibility gap. Automate invoice processing. Stay EU compliant. One platform.</p>
+  <div class="hero-ctas">
+    <button class="btn btn-primary" onclick="showPage('signup')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <span data-i18n="hero_cta_trial">Start 14-Day Free Trial</span>
+    </button>
+    <button class="btn btn-secondary" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})" data-i18n="hero_cta_demo">Book Enterprise Demo</button>
+  </div>
+  <div class="hero-trust-bar">
+    <div class="trust-label" data-i18n="hero_trust_label">Trusted by teams at</div>
+    <div class="trust-logos">Deutsche Telekom &bull; Siemens &bull; BNP Paribas &bull; Zalando &bull; Adidas</div>
+  </div>
+  <div class="hero-metrics">
+    <div class="hero-metric"><div class="number">&euro;2.4B</div><div class="label" data-i18n="hero_metric_processed">Invoices Processed</div></div>
+    <div class="hero-metric"><div class="number">94%</div><div class="label" data-i18n="hero_metric_compliance">Avg Compliance Score</div></div>
+    <div class="hero-metric"><div class="number">12 min</div><div class="label" data-i18n="hero_metric_time">Avg Processing Time</div></div>
+    <div class="hero-metric"><div class="number">40%</div><div class="label" data-i18n="hero_metric_savings">Cost Savings</div></div>
+  </div>
+</div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section class="social-proof">
+<div class="container section-center">
+  <div class="section-label" data-i18n="social_label">What Our Customers Say</div>
+  <div class="section-title" data-i18n="social_title">Trusted by finance leaders across Europe</div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card animate-in">
+      <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <div class="testimonial-quote" data-i18n="testimonial1_quote">"Invoice Ops eliminated 5 hours/week of manual work and caught &euro;180K in duplicate invoices in our first quarter."</div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">MW</div>
+        <div class="testimonial-info"><div class="t-name">Marcus Weber</div><div class="t-title" data-i18n="testimonial1_title">VP Finance, TechScale GmbH</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card animate-in animate-in-delay-1">
+      <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <div class="testimonial-quote" data-i18n="testimonial2_quote">"We achieved EN 16931 compliance in 2 weeks instead of the 6 months our consultants quoted. Game changer."</div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">SL</div>
+        <div class="testimonial-info"><div class="t-name">Sophie Laurent</div><div class="t-title" data-i18n="testimonial2_title">CFO, CloudNine SAS</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card animate-in animate-in-delay-2">
+      <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <div class="testimonial-quote" data-i18n="testimonial3_quote">"The ROI was immediate. We detected rate anomalies that saved us &euro;340K annually across our vendor portfolio."</div>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">EJ</div>
+        <div class="testimonial-info"><div class="t-name">Erik Johansson</div><div class="t-title" data-i18n="testimonial3_title">Head of IT Procurement, Nordic Digital AS</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ROI CALCULATOR -->
+<section class="roi-section" id="roi">
+<div class="container section-center">
+  <div class="section-label" data-i18n="roi_label">ROI Calculator</div>
+  <div class="section-title" data-i18n="roi_title">See your potential savings</div>
+  <div class="section-subtitle" style="margin:0 auto" data-i18n="roi_subtitle">Adjust the sliders to estimate your annual return on investment with Invoice Ops.</div>
+  <div class="roi-calculator">
+    <div class="roi-grid">
+      <div class="roi-inputs">
+        <div class="roi-input-group">
+          <label><span data-i18n="roi_invoices_label">Monthly invoices</span> <span id="roi-invoices-val">5,000</span></label>
+          <input type="range" class="roi-slider" id="roi-invoices" min="100" max="50000" value="5000" step="100" oninput="updateROI()">
+        </div>
+        <div class="roi-input-group">
+          <label><span data-i18n="roi_avg_label">Average invoice value (&euro;)</span> <span id="roi-avg-val">&euro;5,000</span></label>
+          <input type="range" class="roi-slider" id="roi-avg" min="100" max="50000" value="5000" step="100" oninput="updateROI()">
+        </div>
+        <div class="roi-input-group">
+          <label><span data-i18n="roi_hours_label">Hours/week on invoice processing</span> <span id="roi-hours-val">8</span></label>
+          <input type="range" class="roi-slider" id="roi-hours" min="1" max="40" value="8" step="1" oninput="updateROI()">
+        </div>
+      </div>
+      <div class="roi-results">
+        <div class="roi-result-card">
+          <div class="roi-value" id="roi-time-saved">&euro;28,800</div>
+          <div class="roi-label" data-i18n="roi_time_saved">Annual Time Saved</div>
+        </div>
+        <div class="roi-result-card">
+          <div class="roi-value" id="roi-anomaly">&euro;6,000,000</div>
+          <div class="roi-label" data-i18n="roi_anomaly">Duplicate/Anomaly Detection</div>
+        </div>
+        <div class="roi-result-card">
+          <div class="roi-value" id="roi-compliance">&euro;50,000</div>
+          <div class="roi-label" data-i18n="roi_compliance_avoid">Compliance Penalty Avoidance</div>
+        </div>
+        <div class="roi-result-card roi-total">
+          <div class="roi-value" id="roi-total">&euro;6,078,800</div>
+          <div class="roi-label" data-i18n="roi_total_label">Total Annual ROI</div>
+        </div>
+      </div>
+    </div>
+    <div class="roi-cta">
+      <button class="btn btn-primary" onclick="showPage('signup')" data-i18n="roi_cta">Get Your Custom ROI Report</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problems" id="problem">
+<div class="container">
+  <div class="section-label" data-i18n="problem_label">The Problem</div>
+  <div class="section-title" data-i18n="problem_title">Your IT spend has a blind spot</div>
+  <div class="section-subtitle" data-i18n="problem_subtitle">Most companies track cloud costs but lose vendor invoices in email chains and spreadsheets, creating costly gaps.</div>
+  <div class="problems-grid">
+    <div class="problem-card animate-in">
+      <div class="problem-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+      </div>
+      <h3 data-i18n="problem_card1_title">40% IT Spend Invisible</h3>
+      <p data-i18n="problem_card1_desc">Cloud costs tracked, vendor invoices lost in spreadsheets. You're flying blind on nearly half your IT budget.</p>
+    </div>
+    <div class="problem-card animate-in animate-in-delay-1">
+      <div class="problem-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h3 data-i18n="problem_card2_title">&#8364;140k&#8211;&#8364;430k Annual Value at Risk</h3>
+      <p data-i18n="problem_card2_desc">No visibility into duplicate invoices, rate changes, and unused licenses. Money leaks go undetected.</p>
+    </div>
+    <div class="problem-card animate-in animate-in-delay-2">
+      <div class="problem-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h3 data-i18n="problem_card3_title">Manual Invoice Processing</h3>
+      <p data-i18n="problem_card3_desc">5&#8211;10 hours/week on email/PDF sorting, coding, and VAT compliance. Your team deserves better than data entry.</p>
+    </div>
+    <div class="problem-card animate-in animate-in-delay-3">
+      <div class="problem-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+      </div>
+      <h3 data-i18n="problem_card4_title">No Compliance Readiness</h3>
+      <p data-i18n="problem_card4_desc">E-invoice mandates (Germany Jan 2025, France Sep 2026) require EN 16931 + PEPPOL. Non-compliance means penalties.</p>
+    </div>
+  </div>
+  <div class="problem-source" data-i18n="problem_source">Source: Gartner 2025 FinOps Report</div>
+</div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution">
+<div class="container">
+  <div class="section-label" data-i18n="solution_label">The Solution</div>
+  <div class="section-title" data-i18n="solution_title">One platform. Full visibility. Total compliance.</div>
+  <div class="section-subtitle" data-i18n="solution_subtitle">Invoice Ops unifies FinOps vendor cost visibility with EN 16931 e-invoice compliance in a single, automated workflow.</div>
+  <div class="solution-content">
+    <div class="solution-visual">
+      <div class="solution-diagram">
+        <div class="solution-flow"><div class="flow-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div> <span data-i18n="solution_flow1">Invoice Ingestion &amp; OCR Extraction</span></div>
+        <div class="solution-flow"><div class="flow-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div> <span data-i18n="solution_flow2">Classification &amp; Cost Allocation</span></div>
+        <div class="solution-flow"><div class="flow-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg></div> <span data-i18n="solution_flow3">Compliance &amp; PEPPOL Export</span></div>
+      </div>
+    </div>
+    <div class="solution-features">
+      <div class="solution-feature"><div class="feat-marker">1</div><div><h4 data-i18n="solution_feat1_title">Unified Vendor Dashboard</h4><p data-i18n="solution_feat1_desc">See all IT vendor costs in one view. Cloud, SaaS, hardware, consulting &#8212; every invoice accounted for.</p></div></div>
+      <div class="solution-feature"><div class="feat-marker">2</div><div><h4 data-i18n="solution_feat2_title">AI-Powered Extraction</h4><p data-i18n="solution_feat2_desc">90%+ accuracy OCR with confidence scores. No more manual data entry from PDFs and emails.</p></div></div>
+      <div class="solution-feature"><div class="feat-marker">3</div><div><h4 data-i18n="solution_feat3_title">Auto-Classification</h4><p data-i18n="solution_feat3_desc">Invoices auto-categorized by project, team, environment. Cost drivers mapped instantly.</p></div></div>
+      <div class="solution-feature"><div class="feat-marker">4</div><div><h4 data-i18n="solution_feat4_title">Fraud &amp; Anomaly Detection</h4><p data-i18n="solution_feat4_desc">AI detects duplicate invoices, rate anomalies, and suspicious patterns before you pay.</p></div></div>
+      <div class="solution-feature"><div class="feat-marker">5</div><div><h4 data-i18n="solution_feat5_title">EU E-Invoice Compliance</h4><p data-i18n="solution_feat5_desc">Generate EN 16931 compliant e-invoices. Sign, route via PEPPOL, archive with WORM compliance.</p></div></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works" id="how-it-works">
+<div class="container">
+  <div class="section-label" data-i18n="how_label">How It Works</div>
+  <div class="section-title" data-i18n="how_title">From email to compliant e-invoice in 5 steps</div>
+  <div class="section-subtitle" data-i18n="how_subtitle">Automated end-to-end invoice lifecycle &#8212; from PDF to PEPPOL delivery.</div>
+  <div class="steps-pipeline">
+    <div class="step-card animate-in">
+      <div class="step-number"><span class="step-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span></div>
+      <div class="step-label" data-i18n="how_step1_label">Step 1</div>
+      <h3 data-i18n="how_step1_title">Ingest</h3>
+      <p data-i18n="how_step1_desc">Receive invoices via email, PDF upload, API, or PEPPOL network</p>
+    </div>
+    <div class="step-card animate-in animate-in-delay-1">
+      <div class="step-number"><span class="step-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h.01M7 12h.01M7 17h.01M12 7h5M12 12h5M12 17h5"/></svg></span></div>
+      <div class="step-label" data-i18n="how_step2_label">Step 2</div>
+      <h3 data-i18n="how_step2_title">Extract</h3>
+      <p data-i18n="how_step2_desc">AI/OCR processes documents with 90%+ accuracy and confidence scores</p>
+    </div>
+    <div class="step-card animate-in animate-in-delay-2">
+      <div class="step-number"><span class="step-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></span></div>
+      <div class="step-label" data-i18n="how_step3_label">Step 3</div>
+      <h3 data-i18n="how_step3_title">Classify</h3>
+      <p data-i18n="how_step3_desc">Auto-categorize by cost driver &#8212; project, team, environment, category</p>
+    </div>
+    <div class="step-card animate-in animate-in-delay-3">
+      <div class="step-number"><span class="step-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span></div>
+      <div class="step-label" data-i18n="how_step4_label">Step 4</div>
+      <h3 data-i18n="how_step4_title">Allocate</h3>
+      <p data-i18n="how_step4_desc">Tag for chargeback, cost center, and business unit attribution</p>
+    </div>
+    <div class="step-card animate-in animate-in-delay-4">
+      <div class="step-number"><span class="step-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg></span></div>
+      <div class="step-label" data-i18n="how_step5_label">Step 5</div>
+      <h3 data-i18n="how_step5_title">Detect &amp; Comply</h3>
+      <p data-i18n="how_step5_desc">AI fraud detection + EN 16931 e-invoices, PEPPOL routing, WORM archive</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ENTERPRISE FEATURES -->
+<section class="enterprise-features" id="enterprise">
+<div class="container section-center">
+  <div class="section-label" data-i18n="ent_label">Enterprise Grade</div>
+  <div class="section-title" data-i18n="ent_title">Built for scale, security, and compliance</div>
+  <div class="section-subtitle" style="margin:0 auto" data-i18n="ent_subtitle">Everything enterprise teams need to process invoices at scale with confidence.</div>
+  <div class="enterprise-grid">
+    <div class="enterprise-card animate-in">
+      <div class="ent-icon" style="background:rgba(0,212,255,0.1);color:var(--accent-cyan)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg></div>
+      <h3 data-i18n="ent_feat1_title">Audit Trail &amp; Compliance</h3>
+      <p data-i18n="ent_feat1_desc">Immutable audit logs, GDPR-ready data retention, SOC 2 Type II compliant. Every action tracked and exportable.</p>
+    </div>
+    <div class="enterprise-card animate-in animate-in-delay-1">
+      <div class="ent-icon" style="background:rgba(59,130,246,0.1);color:var(--accent-blue)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
+      <h3 data-i18n="ent_feat2_title">API-First Architecture</h3>
+      <p data-i18n="ent_feat2_desc">RESTful API with key management, customer webhooks, 99.99% uptime SLA. Build custom integrations effortlessly.</p>
+    </div>
+    <div class="enterprise-card animate-in animate-in-delay-2">
+      <div class="ent-icon" style="background:rgba(139,92,246,0.1);color:var(--accent-purple)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <h3 data-i18n="ent_feat3_title">Approval Workflows</h3>
+      <p data-i18n="ent_feat3_desc">Configurable approval chains, amount thresholds, role-based routing. Multi-level sign-off for high-value invoices.</p>
+    </div>
+    <div class="enterprise-card animate-in animate-in-delay-3">
+      <div class="ent-icon" style="background:rgba(16,185,129,0.1);color:var(--accent-green)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <h3 data-i18n="ent_feat4_title">ERP Integrations</h3>
+      <p data-i18n="ent_feat4_desc">SAP, Oracle, Xero, QuickBooks connectors. PEPPOL Access Point ready. Seamless two-way data sync.</p>
+    </div>
+    <div class="enterprise-card animate-in animate-in-delay-4">
+      <div class="ent-icon" style="background:rgba(245,158,11,0.1);color:var(--accent-orange)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <h3 data-i18n="ent_feat5_title">Multi-Tenant Security</h3>
+      <p data-i18n="ent_feat5_desc">Tenant isolation, AES-256 encryption at rest, SSO/SAML support. Your data never leaves your jurisdiction.</p>
+    </div>
+    <div class="enterprise-card animate-in animate-in-delay-5">
+      <div class="ent-icon" style="background:rgba(239,68,68,0.1);color:var(--accent-red)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+      <h3 data-i18n="ent_feat6_title">Advanced Analytics</h3>
+      <p data-i18n="ent_feat6_desc">Custom dashboards, spend forecasting, anomaly detection, exportable reports. Data-driven procurement decisions.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+<div class="container section-center">
+  <div class="section-label" data-i18n="pricing_label">Pricing</div>
+  <div class="section-title" data-i18n="pricing_title">Two tracks, one platform</div>
+  <div class="section-subtitle" style="margin:0 auto" data-i18n="pricing_subtitle">Choose your track or combine both for complete coverage. Start free, scale as you grow.</div>
+  <div class="pricing-toggle-wrap">
+    <span class="active-toggle" id="pricing-monthly-label" data-i18n="pricing_monthly">Monthly</span>
+    <div class="pricing-toggle-pill" id="pricing-toggle" onclick="togglePricingPeriod()"></div>
+    <span id="pricing-annual-label" data-i18n="pricing_annual">Annual</span>
+    <span class="pricing-save-badge" data-i18n="pricing_save">Save 20%</span>
+  </div>
+  <div class="pricing-tracks">
+    <div class="pricing-track">
+      <h3><span style="color:var(--accent-cyan)">&#9679;</span> <span data-i18n="pricing_finops_track">FinOps Track</span></h3>
+      <div class="track-desc" data-i18n="pricing_finops_desc">Vendor Cost Visibility</div>
+      <div class="pricing-cards">
+        <div class="pricing-card">
+          <div class="pricing-tier" data-i18n="pricing_starter">Starter</div>
+          <div class="pricing-price"><span class="price-amount" data-monthly="0" data-annual="0">&#8364;0</span><span data-i18n="pricing_mo_base">/mo base</span></div>
+          <div class="pricing-detail" data-i18n="pricing_finops_starter_detail">+ &#8364;0.05 per invoice &middot; Up to 5,000 invoices/mo &middot; &#8364;250/mo usage</div>
+          <button class="btn btn-secondary btn-sm" onclick="showPage('signup')" data-i18n="pricing_get_started">Get Started Free</button>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier" data-i18n="pricing_growth">Growth</div>
+          <div class="pricing-price"><span class="price-amount" data-monthly="500" data-annual="400">&#8364;500</span><span data-i18n="pricing_mo">/mo</span></div>
+          <div class="pricing-detail" data-i18n="pricing_finops_growth_detail">+ &#8364;0.03 per invoice &middot; 10k&#8211;20k invoices/mo &middot; &#8364;800&#8211;&#8364;1,100/mo</div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('signup')" data-i18n="pricing_start_trial">Start Free Trial</button>
+        </div>
+        <div class="pricing-card enterprise-highlight">
+          <div class="pricing-tier" style="color:var(--accent-purple)" data-i18n="pricing_enterprise">Enterprise</div>
+          <div class="pricing-price" data-i18n="pricing_custom">Custom</div>
+          <div class="pricing-enterprise-features">
+            <span class="pef" data-i18n="pef_infra">Dedicated infrastructure</span>
+            <span class="pef" data-i18n="pef_sla">Custom SLA</span>
+            <span class="pef" data-i18n="pef_sso">SSO/SAML</span>
+            <span class="pef" data-i18n="pef_csm">Dedicated CSM</span>
+            <span class="pef" data-i18n="pef_onprem">On-premise option</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-i18n="pricing_contact">Contact Sales</button>
+        </div>
+      </div>
+    </div>
+    <div class="pricing-track">
+      <h3><span style="color:var(--accent-green)">&#9679;</span> <span data-i18n="pricing_compliance_track">E-Invoice Compliance Track</span></h3>
+      <div class="track-desc" data-i18n="pricing_compliance_desc">Regulatory Ready &#8212; EN 16931 &amp; PEPPOL</div>
+      <div class="pricing-cards">
+        <div class="pricing-card">
+          <div class="pricing-tier" data-i18n="pricing_starter2">Starter</div>
+          <div class="pricing-price"><span class="price-amount" data-monthly="100" data-annual="80">&#8364;100</span><span data-i18n="pricing_mo3">/mo</span></div>
+          <div class="pricing-detail" data-i18n="pricing_comp_starter_detail">+ &#8364;0.02 per invoice &middot; Full EN 16931 compliance</div>
+          <button class="btn btn-secondary btn-sm" onclick="showPage('signup')" data-i18n="pricing_start_trial2">Start Free Trial</button>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-tier" data-i18n="pricing_growth2">Growth</div>
+          <div class="pricing-price"><span class="price-amount" data-monthly="800" data-annual="640">&#8364;800</span><span data-i18n="pricing_mo4">/mo</span></div>
+          <div class="pricing-detail" data-i18n="pricing_comp_growth_detail">+ &#8364;0.015 per invoice &middot; &#8364;1,050&#8211;&#8364;1,950/mo</div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('signup')" data-i18n="pricing_start_trial3">Start Free Trial</button>
+        </div>
+        <div class="pricing-card enterprise-highlight">
+          <div class="pricing-tier" style="color:var(--accent-purple)" data-i18n="pricing_enterprise2">Enterprise</div>
+          <div class="pricing-price" data-i18n="pricing_custom2">Custom</div>
+          <div class="pricing-enterprise-features">
+            <span class="pef" data-i18n="pef_infra">Dedicated infrastructure</span>
+            <span class="pef" data-i18n="pef_sla">Custom SLA</span>
+            <span class="pef" data-i18n="pef_sso">SSO/SAML</span>
+            <span class="pef" data-i18n="pef_csm">Dedicated CSM</span>
+            <span class="pef" data-i18n="pef_onprem">On-premise option</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-i18n="pricing_contact2">Contact Sales</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING FAQ -->
+  <div class="pricing-faq">
+    <div class="section-title" style="font-size:1.8rem" data-i18n="faq_title">Frequently Asked Questions</div>
+    <div class="faq-grid">
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question"><span data-i18n="faq1_q">How does the 14-day trial work?</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+        <div class="faq-answer" data-i18n="faq1_a">You get full access to all features for 14 days with no credit card required. At the end of the trial, choose a plan that fits your needs or your account will be paused -- no charges, no data loss.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question"><span data-i18n="faq2_q">Can I switch plans anytime?</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+        <div class="faq-answer" data-i18n="faq2_a">Yes. Upgrade or downgrade at any time. When you upgrade, the new rate applies immediately with prorated billing. Downgrades take effect at the next billing cycle.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question"><span data-i18n="faq3_q">Is my data safe?</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+        <div class="faq-answer" data-i18n="faq3_a">Absolutely. We are SOC 2 Type II certified, GDPR compliant, and ISO 27001 certified. All data is encrypted at rest (AES-256) and in transit (TLS 1.3). Data residency options available for EU customers.</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question"><span data-i18n="faq4_q">Do you offer on-premise deployment?</span> <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+        <div class="faq-answer" data-i18n="faq4_a">Yes. Our Enterprise plan includes the option for on-premise or private cloud deployment. Contact our sales team for architecture details and pricing tailored to your infrastructure requirements.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- TRUST SECTION -->
+<section class="trust-section" id="trust">
+<div class="container">
+  <div class="trust-badges">
+    <div class="trust-badge-item"><div class="trust-badge-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-green)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div> SOC 2 Type II</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div> GDPR Compliant</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div> ISO 27001</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon" style="background:rgba(0,212,255,0.12);color:var(--accent-cyan)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div> EN 16931 Certified</div>
+    <div class="trust-badge-item"><div class="trust-badge-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-orange)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div> PEPPOL Certified</div>
+  </div>
+  <div class="trust-backed" data-i18n="trust_backed">Backed by <span>Y Combinator &bull; Balderton Capital &bull; Point Nine</span></div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+<div class="container">
+  <div class="cta-box">
+    <div class="section-label" style="text-align:center" data-i18n="cta_label">Get Started</div>
+    <h2 data-i18n="cta_title">Ready to save &euro;140K+ per year?</h2>
+    <p data-i18n="cta_subtitle">Join forward-thinking IT and finance teams who have eliminated invoice blind spots and achieved EU compliance.</p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary" onclick="showPage('signup')" data-i18n="cta_trial">Start Your Free Trial</button>
+      <button class="btn btn-secondary" data-i18n="cta_demo">Book a Demo</button>
+    </div>
+    <div class="cta-contact">
+      <a href="mailto:fattayri@gmail.com"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg> fattayri@gmail.com</a>
+      <a href="tel:+33767812018"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> +33 7 67 81 20 18</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+<div class="container">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div class="footer-logo"><div class="logo-mark">IO</div> <span>Invoice Ops</span></div>
+      <p data-i18n="footer_desc">The operating system for IT vendor invoices. Close the visibility gap, automate compliance, and save.</p>
+    </div>
+    <div class="footer-col">
+      <h4 data-i18n="footer_product">Product</h4>
+      <a href="#solution" data-i18n="footer_features">Features</a>
+      <a href="#pricing" data-i18n="footer_pricing">Pricing</a>
+      <a href="#enterprise" data-i18n="footer_integrations">Integrations</a>
+      <a href="#" data-i18n="footer_api_docs">API Docs</a>
+      <a href="#" data-i18n="footer_changelog">Changelog</a>
+    </div>
+    <div class="footer-col">
+      <h4 data-i18n="footer_company">Company</h4>
+      <a href="#" data-i18n="footer_about">About</a>
+      <a href="#" data-i18n="footer_careers">Careers</a>
+      <a href="#" data-i18n="footer_blog">Blog</a>
+      <a href="#" data-i18n="footer_press">Press</a>
+    </div>
+    <div class="footer-col">
+      <h4 data-i18n="footer_resources">Resources</h4>
+      <a href="#" data-i18n="footer_documentation">Documentation</a>
+      <a href="#" data-i18n="footer_help">Help Center</a>
+      <a href="#" data-i18n="footer_status">Status</a>
+      <a href="#" data-i18n="footer_community">Community</a>
+    </div>
+    <div class="footer-col">
+      <h4 data-i18n="footer_legal">Legal</h4>
+      <a href="#" data-i18n="footer_privacy">Privacy Policy</a>
+      <a href="#" data-i18n="footer_terms">Terms of Service</a>
+      <a href="#" data-i18n="footer_dpa">DPA</a>
+      <a href="#" data-i18n="footer_cookies">Cookie Policy</a>
+    </div>
+  </div>
+  <div class="footer-bottom" data-i18n="footer_text">&copy; 2026 Invoice Ops. All rights reserved. EN 16931 &amp; PEPPOL compliant.</div>
+</div>
+</footer>
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="login-page" class="page">
+<div class="auth-page">
+  <a href="#" class="auth-back btn-icon" onclick="showPage('landing')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+  <div class="auth-lang-wrap">
+    <div class="lang-switcher" id="lang-switcher-login">
+      <button class="lang-btn" onclick="toggleLangDropdown('login')"><span class="lang-flag" id="lang-flag-login">EN</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="lang-dropdown" id="lang-dropdown-login">
+        <button class="lang-option active" data-lang="en" onclick="setLang('en')">EN English</button>
+        <button class="lang-option" data-lang="fr" onclick="setLang('fr')">FR Francais</button>
+        <button class="lang-option" data-lang="es" onclick="setLang('es')">ES Espanol</button>
+      </div>
+    </div>
+  </div>
+  <div class="auth-card">
+    <a href="#" class="nav-logo" style="justify-content:center;margin-bottom:32px" onclick="showPage('landing')"><div class="logo-mark">IO</div><span>Invoice Ops</span></a>
+    <h2 data-i18n="login_title">Welcome back</h2>
+    <div class="auth-subtitle" data-i18n="login_subtitle">Log in to your account</div>
+    <div class="form-group"><label data-i18n="login_email_label">Email</label><input type="email" id="login-email" data-i18n-placeholder="login_email_placeholder" placeholder="you@company.com"></div>
+    <div class="form-group"><label data-i18n="login_password_label">Password</label><input type="password" id="login-password" data-i18n-placeholder="login_password_placeholder" placeholder="Enter your password"></div>
+    <div id="login-error" style="color:var(--accent-red);font-size:0.82rem;margin-bottom:8px;min-height:1.2em"></div>
+    <button class="btn btn-primary" onclick="handleLogin()" data-i18n="login_btn">Log In</button>
+    <div class="auth-footer"><span data-i18n="login_footer_text">Don't have an account?</span> <a href="#" onclick="showPage('signup')" data-i18n="login_footer_link">Sign up</a></div>
+  </div>
+</div>
+</div>
+
+<!-- SIGNUP PAGE -->
+<div id="signup-page" class="page">
+<div class="auth-page">
+  <a href="#" class="auth-back btn-icon" onclick="showPage('landing')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+  <div class="auth-lang-wrap">
+    <div class="lang-switcher" id="lang-switcher-signup">
+      <button class="lang-btn" onclick="toggleLangDropdown('signup')"><span class="lang-flag" id="lang-flag-signup">EN</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="lang-dropdown" id="lang-dropdown-signup">
+        <button class="lang-option active" data-lang="en" onclick="setLang('en')">EN English</button>
+        <button class="lang-option" data-lang="fr" onclick="setLang('fr')">FR Francais</button>
+        <button class="lang-option" data-lang="es" onclick="setLang('es')">ES Espanol</button>
+      </div>
+    </div>
+  </div>
+  <div class="auth-card">
+    <a href="#" class="nav-logo" style="justify-content:center;margin-bottom:32px" onclick="showPage('landing')"><div class="logo-mark">IO</div><span>Invoice Ops</span></a>
+    <h2 data-i18n="signup_title">Start your free trial</h2>
+    <div class="auth-subtitle" data-i18n="signup_subtitle">14 days free. No credit card required.</div>
+    <div class="form-group"><label data-i18n="signup_name_label">Full Name</label><input type="text" id="signup-name" data-i18n-placeholder="signup_name_placeholder" placeholder="Jane Smith"></div>
+    <div class="form-group"><label data-i18n="signup_email_label">Work Email</label><input type="email" id="signup-email" data-i18n-placeholder="signup_email_placeholder" placeholder="jane@company.com"></div>
+    <div class="form-group"><label data-i18n="signup_company_label">Company</label><input type="text" id="signup-company" data-i18n-placeholder="signup_company_placeholder" placeholder="Acme Corp"></div>
+    <div class="form-group"><label data-i18n="signup_password_label">Password</label><input type="password" id="signup-password" data-i18n-placeholder="signup_password_placeholder" placeholder="Create a password"></div>
+    <div id="signup-error" style="color:var(--accent-red);font-size:0.82rem;margin-bottom:8px;min-height:1.2em"></div>
+    <button class="btn btn-primary" onclick="handleSignup()" data-i18n="signup_btn">Create Account</button>
+    <div class="auth-footer"><span data-i18n="signup_footer_text">Already have an account?</span> <a href="#" onclick="showPage('login')" data-i18n="signup_footer_link">Log in</a></div>
+  </div>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard-page" class="page">
+<div class="dashboard-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-header">
+  <div class="logo-mark">IO</div>
+  <span>Invoice Ops</span>
+</div>
+<nav class="sidebar-nav">
+  <a href="#" class="active" data-dash="overview" onclick="switchDash(this,'overview')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+    <span data-i18n="sidebar_dashboard">Dashboard</span>
+  </a>
+  <a href="#" data-dash="invoices" onclick="switchDash(this,'invoices')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></span>
+    <span data-i18n="sidebar_invoices">Invoices</span>
+  </a>
+  <a href="#" data-dash="vendors" onclick="switchDash(this,'vendors')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+    <span data-i18n="sidebar_vendors">Vendors</span>
+  </a>
+  <a href="#" data-dash="analytics" onclick="switchDash(this,'analytics')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+    <span data-i18n="sidebar_analytics">Analytics</span>
+  </a>
+  <a href="#" data-dash="compliance" onclick="switchDash(this,'compliance')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+    <span data-i18n="sidebar_compliance">Compliance</span>
+  </a>
+  <a href="#" data-dash="approvals" onclick="switchDash(this,'approvals')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+    <span data-i18n="sidebar_approvals">Approvals</span>
+  </a>
+  <a href="#" data-dash="settings" onclick="switchDash(this,'settings')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+    <span data-i18n="sidebar_settings">Settings</span>
+  </a>
+  <div class="sidebar-divider"></div>
+  <a href="#" data-dash="audit" onclick="switchDash(this,'audit')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg></span>
+    <span data-i18n="sidebar_audit">Audit Log</span>
+  </a>
+  <a href="#" data-dash="apikeys" onclick="switchDash(this,'apikeys')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
+    <span data-i18n="sidebar_apikeys">API Keys</span>
+  </a>
+  <a href="#" data-dash="integrations" onclick="switchDash(this,'integrations')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+    <span data-i18n="sidebar_integrations">Integrations</span>
+  </a>
+</nav>
+<div class="sidebar-footer">
+  <a href="#" onclick="showPage('landing')">
+    <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+    <span data-i18n="sidebar_signout">Sign Out</span>
+  </a>
+</div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="dash-main">
+<div class="dash-topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <button class="mobile-menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h1 id="dash-page-title" data-i18n="sidebar_dashboard">Dashboard</h1>
+  </div>
+  <div class="dash-topbar-right">
+    <div class="dash-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" data-i18n-placeholder="dash_search_placeholder" placeholder="Search invoices..."></div>
+    <div class="lang-switcher" id="lang-switcher-dashboard">
+      <button class="lang-btn" onclick="toggleLangDropdown('dashboard')"><span class="lang-flag" id="lang-flag-dashboard">EN</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
+      <div class="lang-dropdown" id="lang-dropdown-dashboard">
+        <button class="lang-option active" data-lang="en" onclick="setLang('en')">EN English</button>
+        <button class="lang-option" data-lang="fr" onclick="setLang('fr')">FR Francais</button>
+        <button class="lang-option" data-lang="es" onclick="setLang('es')">ES Espanol</button>
+      </div>
+    </div>
+    <button class="btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+    <div class="avatar">JD</div>
+  </div>
+</div>
+
+<div class="dash-content">
+
+<!-- OVERVIEW -->
+<div id="dash-overview" class="dash-page" style="display:block">
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon" style="background:rgba(0,212,255,0.1);color:var(--accent-cyan)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div>
+        <span class="kpi-change" style="color:var(--accent-green)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg> 12%</span>
+      </div>
+      <div class="kpi-value">8,432</div>
+      <div class="kpi-label" data-i18n="kpi_total_invoices">Total Invoices</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon" style="background:rgba(59,130,246,0.1);color:var(--accent-blue)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <span class="kpi-change" style="color:var(--accent-orange)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg> 5%</span>
+      </div>
+      <div class="kpi-value">&#8364;1.2M</div>
+      <div class="kpi-label" data-i18n="kpi_monthly_spend">Monthly Spend</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon" style="background:rgba(16,185,129,0.1);color:var(--accent-green)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+        <span class="kpi-change" style="color:var(--accent-green)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg> 28%</span>
+      </div>
+      <div class="kpi-value">&#8364;47.2K</div>
+      <div class="kpi-label" data-i18n="kpi_savings">Savings Detected</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-icon" style="background:rgba(139,92,246,0.1);color:var(--accent-purple)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg></div>
+        <span class="kpi-change badge-green" style="font-size:0.75rem" data-i18n="kpi_compliant_badge">Compliant</span>
+      </div>
+      <div class="kpi-value">94%</div>
+      <div class="kpi-label" data-i18n="kpi_compliance">Compliance Score</div>
+    </div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3 data-i18n="chart_spend_trend">Monthly Spend Trend</h3><div class="chart-wrap"><canvas id="spendChart"></canvas></div></div>
+    <div class="chart-card"><h3 data-i18n="chart_vendor_breakdown">Vendor Breakdown</h3><div class="chart-wrap"><canvas id="vendorChart"></canvas></div></div>
+  </div>
+  <div class="data-table-wrap">
+    <div class="table-header"><h3 data-i18n="table_recent_invoices">Recent Invoices</h3><div class="table-actions"><button class="btn btn-primary btn-sm" onclick="handleUploadInvoice()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="btn_upload">Upload</span></button></div></div>
+    <table>
+      <thead><tr><th data-i18n="th_invoice">Invoice</th><th data-i18n="th_vendor">Vendor</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_date">Date</th><th data-i18n="th_status">Status</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1847</td><td>AWS</td><td style="font-family:var(--font-mono)">&#8364;24,580.00</td><td style="color:var(--text-secondary)">May 12, 2026</td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1846</td><td>Datadog</td><td style="font-family:var(--font-mono)">&#8364;8,920.00</td><td style="color:var(--text-secondary)">May 11, 2026</td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1845</td><td>Snowflake</td><td style="font-family:var(--font-mono)">&#8364;15,340.00</td><td style="color:var(--text-secondary)">May 10, 2026</td><td class="status-pending"><span class="status-dot"></span><span data-i18n="status_pending">Pending</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1844</td><td>Confluent</td><td style="font-family:var(--font-mono)">&#8364;3,200.00</td><td style="color:var(--text-secondary)">May 9, 2026</td><td class="status-flagged"><span class="status-dot"></span><span data-i18n="status_flagged">Flagged</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1843</td><td>MongoDB</td><td style="font-family:var(--font-mono)">&#8364;6,750.00</td><td style="color:var(--text-secondary)">May 8, 2026</td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- INVOICES -->
+<div id="dash-invoices" class="dash-page" style="display:none">
+  <div class="data-table-wrap">
+    <div class="table-header">
+      <h3 data-i18n="table_all_invoices">All Invoices</h3>
+      <div class="table-actions">
+        <div class="table-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" data-i18n-placeholder="dash_search_placeholder" placeholder="Search invoices..."></div>
+        <select style="padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--text-secondary)"><option data-i18n="filter_all_status">All Status</option><option data-i18n="filter_processed">Processed</option><option data-i18n="filter_pending">Pending</option><option data-i18n="filter_flagged">Flagged</option></select>
+        <button class="btn btn-primary btn-sm" onclick="handleUploadInvoice()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="btn_upload_invoice">Upload Invoice</span></button>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th data-i18n="th_invoice_id">Invoice ID</th><th data-i18n="th_vendor">Vendor</th><th data-i18n="th_category">Category</th><th data-i18n="th_amount">Amount</th><th data-i18n="th_date">Date</th><th data-i18n="th_confidence">Confidence</th><th data-i18n="th_status">Status</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1847</td><td>AWS</td><td><span class="badge badge-cyan" data-i18n="cat_cloud">Cloud</span></td><td style="font-family:var(--font-mono)">&#8364;24,580.00</td><td style="color:var(--text-secondary)">May 12, 2026</td><td><span class="badge badge-green">98%</span></td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1846</td><td>Datadog</td><td><span class="badge badge-purple" data-i18n="cat_monitoring">Monitoring</span></td><td style="font-family:var(--font-mono)">&#8364;8,920.00</td><td style="color:var(--text-secondary)">May 11, 2026</td><td><span class="badge badge-green">95%</span></td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1845</td><td>Snowflake</td><td><span class="badge badge-cyan" data-i18n="cat_data">Data</span></td><td style="font-family:var(--font-mono)">&#8364;15,340.00</td><td style="color:var(--text-secondary)">May 10, 2026</td><td><span class="badge badge-orange">82%</span></td><td class="status-pending"><span class="status-dot"></span><span data-i18n="status_pending">Pending</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1844</td><td>Confluent</td><td><span class="badge badge-purple" data-i18n="cat_streaming">Streaming</span></td><td style="font-family:var(--font-mono)">&#8364;3,200.00</td><td style="color:var(--text-secondary)">May 9, 2026</td><td><span class="badge badge-red">67%</span></td><td class="status-flagged"><span class="status-dot"></span><span data-i18n="status_flagged">Flagged</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1843</td><td>MongoDB</td><td><span class="badge badge-cyan" data-i18n="cat_database">Database</span></td><td style="font-family:var(--font-mono)">&#8364;6,750.00</td><td style="color:var(--text-secondary)">May 8, 2026</td><td><span class="badge badge-green">96%</span></td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1842</td><td>Google Cloud</td><td><span class="badge badge-cyan" data-i18n="cat_cloud">Cloud</span></td><td style="font-family:var(--font-mono)">&#8364;18,200.00</td><td style="color:var(--text-secondary)">May 7, 2026</td><td><span class="badge badge-green">99%</span></td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1841</td><td>HashiCorp</td><td><span class="badge badge-purple" data-i18n="cat_devops">DevOps</span></td><td style="font-family:var(--font-mono)">&#8364;4,100.00</td><td style="color:var(--text-secondary)">May 6, 2026</td><td><span class="badge badge-green">94%</span></td><td class="status-processed"><span class="status-dot"></span><span data-i18n="status_processed">Processed</span></td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem">INV-2026-1840</td><td>Elastic</td><td><span class="badge badge-purple" data-i18n="cat_search">Search</span></td><td style="font-family:var(--font-mono)">&#8364;5,600.00</td><td style="color:var(--text-secondary)">May 5, 2026</td><td><span class="badge badge-orange">78%</span></td><td class="status-pending"><span class="status-dot"></span><span data-i18n="status_pending">Pending</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- VENDORS -->
+<div id="dash-vendors" class="dash-page" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h3 style="font-size:1rem;font-weight:600" data-i18n="vendors_all_title">All Vendors</h3>
+    <button class="btn btn-primary btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="btn_add_vendor">Add Vendor</span></button>
+  </div>
+  <div class="vendors-grid" id="vendors-grid"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="dash-analytics" class="dash-page" style="display:none">
+  <div class="charts-grid" style="grid-template-columns:1fr 1fr;margin-bottom:20px">
+    <div class="chart-card"><h3 data-i18n="chart_spend_category">Spend by Category</h3><div class="chart-wrap"><canvas id="categoryChart"></canvas></div></div>
+    <div class="chart-card"><h3 data-i18n="chart_volume_trend">Invoice Volume Trend</h3><div class="chart-wrap"><canvas id="volumeChart"></canvas></div></div>
+  </div>
+  <div class="charts-grid" style="grid-template-columns:1fr 1fr">
+    <div class="chart-card"><h3 data-i18n="chart_savings">Cost Savings Over Time</h3><div class="chart-wrap"><canvas id="savingsChart"></canvas></div></div>
+    <div class="chart-card"><h3 data-i18n="chart_processing">Processing Time (Avg Days)</h3><div class="chart-wrap"><canvas id="processingChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- COMPLIANCE -->
+<div id="dash-compliance" class="dash-page" style="display:none">
+  <div class="compliance-grid">
+    <div class="compliance-card">
+      <h3 data-i18n="comp_en_title">EN 16931 Compliance</h3>
+      <div class="compliance-meter"><div class="fill" style="width:94%;background:var(--accent-green)"></div></div>
+      <div class="compliance-stat"><span data-i18n="comp_score">Compliance Score</span><span style="font-weight:600;color:var(--accent-green)">94%</span></div>
+      <div class="compliance-checklist">
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_xml">XML Schema Validation</span></div>
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_fields">Mandatory Field Completeness</span></div>
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_vat">VAT Calculation Accuracy</span></div>
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_sig">Digital Signature (XAdES)</span></div>
+        <div class="check-item pending"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="1"/></svg></div> <span data-i18n="comp_crossborder">Cross-border VAT Mapping</span></div>
+      </div>
+    </div>
+    <div class="compliance-card">
+      <h3 data-i18n="comp_peppol_title">PEPPOL Readiness</h3>
+      <div class="compliance-meter"><div class="fill" style="width:78%;background:var(--accent-cyan)"></div></div>
+      <div class="compliance-stat"><span data-i18n="comp_readiness">Readiness Score</span><span style="font-weight:600;color:var(--accent-cyan)">78%</span></div>
+      <div class="compliance-checklist">
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_bis">PEPPOL BIS 3.0 Format</span></div>
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_access">Access Point Registration</span></div>
+        <div class="check-item done"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div> <span data-i18n="comp_smp">SMP/SML Lookup</span></div>
+        <div class="check-item pending"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="1"/></svg></div> <span data-i18n="comp_endpoint">Production Endpoint Testing</span></div>
+        <div class="check-item pending"><div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="1"/></svg></div> <span data-i18n="comp_worm">WORM Archive Integration</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="compliance-card">
+    <h3 data-i18n="comp_timeline_title">Regulatory Timeline</h3>
+    <div style="display:flex;gap:20px;margin-top:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px;padding:20px;background:var(--bg-surface);border-radius:var(--radius-sm);border-left:3px solid var(--accent-green)">
+        <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--accent-green);margin-bottom:8px" data-i18n="comp_de_date">JAN 2025 &#8212; ACTIVE</div>
+        <div style="font-weight:600;margin-bottom:4px" data-i18n="comp_de_title">Germany B2B E-Invoice</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary)" data-i18n="comp_de_desc">Mandatory reception of e-invoices for all B2B transactions.</div>
+      </div>
+      <div style="flex:1;min-width:200px;padding:20px;background:var(--bg-surface);border-radius:var(--radius-sm);border-left:3px solid var(--accent-orange)">
+        <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--accent-orange);margin-bottom:8px" data-i18n="comp_fr_date">SEP 2026 &#8212; UPCOMING</div>
+        <div style="font-weight:600;margin-bottom:4px" data-i18n="comp_fr_title">France E-Invoicing Mandate</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary)" data-i18n="comp_fr_desc">All B2B invoices must be issued as structured e-invoices via PDP.</div>
+      </div>
+      <div style="flex:1;min-width:200px;padding:20px;background:var(--bg-surface);border-radius:var(--radius-sm);border-left:3px solid var(--accent-cyan)">
+        <div style="font-family:var(--font-mono);font-size:0.75rem;color:var(--accent-cyan);margin-bottom:8px" data-i18n="comp_eu_date">2028 &#8212; PLANNED</div>
+        <div style="font-weight:600;margin-bottom:4px" data-i18n="comp_eu_title">EU ViDA Regulation</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary)" data-i18n="comp_eu_desc">EU-wide digital reporting &amp; real-time e-invoicing requirements.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APPROVALS -->
+<div id="dash-approvals" class="dash-page" style="display:none">
+  <div class="approval-rules">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:1rem;font-weight:600" data-i18n="approvals_rules_title">Approval Rules</h3>
+      <button class="btn btn-primary btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="btn_add_rule">Add Rule</span></button>
+    </div>
+    <div class="approval-rule-row">
+      <div><div class="rule-condition" data-i18n="rule1_condition">Amount &gt; &euro;10,000</div><div class="rule-action" data-i18n="rule1_action">Requires CFO approval</div></div>
+      <span class="badge badge-cyan" data-i18n="rule_active">Active</span>
+    </div>
+    <div class="approval-rule-row">
+      <div><div class="rule-condition" data-i18n="rule2_condition">New vendor (first invoice)</div><div class="rule-action" data-i18n="rule2_action">Requires procurement approval</div></div>
+      <span class="badge badge-cyan" data-i18n="rule_active">Active</span>
+    </div>
+    <div class="approval-rule-row">
+      <div><div class="rule-condition" data-i18n="rule3_condition">Confidence score &lt; 80%</div><div class="rule-action" data-i18n="rule3_action">Requires manual review</div></div>
+      <span class="badge badge-cyan" data-i18n="rule_active">Active</span>
+    </div>
+  </div>
+  <div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:16px" data-i18n="approvals_pending_title">Pending Approvals</h3>
+    <div class="pending-approval-card">
+      <div class="pa-info">
+        <h4>INV-2026-1845 &mdash; Snowflake</h4>
+        <p data-i18n="pending1_desc">&euro;15,340.00 &middot; Triggered: Amount &gt; &euro;10,000 &middot; Awaiting CFO approval</p>
+      </div>
+      <div class="pa-actions">
+        <button class="btn btn-primary btn-sm" data-i18n="btn_approve">Approve</button>
+        <button class="btn btn-secondary btn-sm" style="border-color:var(--accent-red);color:var(--accent-red)" data-i18n="btn_reject">Reject</button>
+      </div>
+    </div>
+    <div class="pending-approval-card">
+      <div class="pa-info">
+        <h4>INV-2026-1844 &mdash; Confluent</h4>
+        <p data-i18n="pending2_desc">&euro;3,200.00 &middot; Triggered: Confidence &lt; 80% (67%) &middot; Awaiting manual review</p>
+      </div>
+      <div class="pa-actions">
+        <button class="btn btn-primary btn-sm" data-i18n="btn_approve">Approve</button>
+        <button class="btn btn-secondary btn-sm" style="border-color:var(--accent-red);color:var(--accent-red)" data-i18n="btn_reject">Reject</button>
+      </div>
+    </div>
+    <div class="pending-approval-card">
+      <div class="pa-info">
+        <h4>INV-2026-1839 &mdash; NewVendor Inc.</h4>
+        <p data-i18n="pending3_desc">&euro;7,800.00 &middot; Triggered: New vendor &middot; Awaiting procurement approval</p>
+      </div>
+      <div class="pa-actions">
+        <button class="btn btn-primary btn-sm" data-i18n="btn_approve">Approve</button>
+        <button class="btn btn-secondary btn-sm" style="border-color:var(--accent-red);color:var(--accent-red)" data-i18n="btn_reject">Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="dash-settings" class="dash-page" style="display:none">
+  <div class="settings-section">
+    <h3 data-i18n="settings_account">Account Settings</h3>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_company_name">Company Name</h4><p>Acme Corp GmbH</p></div><button class="btn btn-secondary btn-sm" data-i18n="btn_edit">Edit</button></div>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_account_email">Account Email</h4><p>admin@acmecorp.de</p></div><button class="btn btn-secondary btn-sm" data-i18n="btn_edit">Edit</button></div>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_vat">VAT Number</h4><p>DE123456789</p></div><button class="btn btn-secondary btn-sm" data-i18n="btn_edit">Edit</button></div>
+  </div>
+  <div class="settings-section">
+    <h3 data-i18n="settings_processing">Invoice Processing</h3>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_autoclassify">Auto-classify invoices</h4><p data-i18n="settings_autoclassify_desc">Automatically categorize invoices by cost driver using AI</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_duplicate">Duplicate detection</h4><p data-i18n="settings_duplicate_desc">Flag potential duplicate invoices before processing</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_autoapprove">Auto-approve under threshold</h4><p data-i18n="settings_autoapprove_desc">Auto-approve invoices under &#8364;500 with 90%+ confidence</p></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+  </div>
+  <div class="settings-section">
+    <h3 data-i18n="settings_compliance">Compliance &amp; Export</h3>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_en_gen">EN 16931 e-invoice generation</h4><p data-i18n="settings_en_gen_desc">Auto-generate compliant e-invoices for processed documents</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_peppol">PEPPOL routing</h4><p data-i18n="settings_peppol_desc">Route generated e-invoices via PEPPOL network</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_worm">WORM archiving</h4><p data-i18n="settings_worm_desc">Archive all processed invoices with write-once-read-many compliance</p></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+  </div>
+  <div class="settings-section">
+    <h3 data-i18n="settings_subscription">Subscription</h3>
+    <div class="settings-row"><div class="setting-info"><h4 data-i18n="settings_current_plan">Current Plan</h4><p data-i18n="settings_plan_value">FinOps Growth + Compliance Starter</p></div><button class="btn btn-primary btn-sm" data-i18n="btn_upgrade">Upgrade Plan</button></div>
+  </div>
+</div>
+
+<!-- AUDIT LOG -->
+<div id="dash-audit" class="dash-page" style="display:none">
+  <div class="data-table-wrap">
+    <div class="table-header">
+      <h3 data-i18n="audit_title">Audit Log</h3>
+      <div class="table-actions">
+        <select style="padding:8px 12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.82rem;color:var(--text-secondary)">
+          <option data-i18n="audit_filter_all">All Actions</option>
+          <option data-i18n="audit_filter_login">Login</option>
+          <option data-i18n="audit_filter_create">Create</option>
+          <option data-i18n="audit_filter_update">Update</option>
+          <option data-i18n="audit_filter_delete">Delete</option>
+        </select>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th data-i18n="audit_th_time">Timestamp</th><th data-i18n="audit_th_user">User</th><th data-i18n="audit_th_action">Action</th><th data-i18n="audit_th_entity">Entity</th><th data-i18n="audit_th_details">Details</th></tr></thead>
+      <tbody>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-14 09:32:15</td><td>admin@acmecorp.de</td><td><span class="badge badge-green">Login</span></td><td>Session</td><td style="color:var(--text-secondary)">Successful login from 192.168.1.42</td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-14 09:35:22</td><td>admin@acmecorp.de</td><td><span class="badge badge-cyan">Create</span></td><td>Invoice INV-2026-1847</td><td style="color:var(--text-secondary)">Uploaded invoice from AWS, amount &euro;24,580.00</td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-14 09:36:01</td><td>system</td><td><span class="badge badge-purple">Process</span></td><td>Invoice INV-2026-1847</td><td style="color:var(--text-secondary)">OCR extraction complete, confidence 98%</td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-13 16:45:10</td><td>finance@acmecorp.de</td><td><span class="badge badge-orange">Update</span></td><td>Settings</td><td style="color:var(--text-secondary)">Changed auto-approve threshold to &euro;500</td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-13 14:22:33</td><td>admin@acmecorp.de</td><td><span class="badge badge-cyan">Create</span></td><td>API Key</td><td style="color:var(--text-secondary)">Generated "Production API" key</td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-13 11:10:05</td><td>admin@acmecorp.de</td><td><span class="badge badge-orange">Update</span></td><td>Integration</td><td style="color:var(--text-secondary)">Connected Xero integration</td></tr>
+        <tr><td style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-muted)">2026-05-12 09:00:00</td><td>system</td><td><span class="badge badge-green">Login</span></td><td>Session</td><td style="color:var(--text-secondary)">Scheduled compliance scan completed</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- API KEYS -->
+<div id="dash-apikeys" class="dash-page" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h3 style="font-size:1rem;font-weight:600" data-i18n="apikeys_title">API Keys</h3>
+    <button class="btn btn-primary btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="btn_generate_key">Generate New Key</span></button>
+  </div>
+  <div class="apikey-card">
+    <div class="apikey-info">
+      <h4>Production API</h4>
+      <div class="key-prefix">io_sk_prod_a3f8...x9k2</div>
+    </div>
+    <div class="apikey-meta">
+      <span><span style="color:var(--text-muted)" data-i18n="apikey_perms">Permissions:</span> Read, Write</span>
+      <span><span style="color:var(--text-muted)" data-i18n="apikey_last_used">Last used:</span> 2 hours ago</span>
+      <span class="badge badge-green" data-i18n="apikey_active">Active</span>
+    </div>
+  </div>
+  <div class="apikey-card">
+    <div class="apikey-info">
+      <h4>CI/CD Pipeline</h4>
+      <div class="key-prefix">io_sk_cicd_7b2e...m4p1</div>
+    </div>
+    <div class="apikey-meta">
+      <span><span style="color:var(--text-muted)" data-i18n="apikey_perms">Permissions:</span> Read</span>
+      <span><span style="color:var(--text-muted)" data-i18n="apikey_last_used">Last used:</span> 1 day ago</span>
+      <span class="badge badge-green" data-i18n="apikey_active">Active</span>
+    </div>
+  </div>
+  <div class="apikey-card">
+    <div class="apikey-info">
+      <h4>Analytics Export</h4>
+      <div class="key-prefix">io_sk_anly_c1d9...q7w3</div>
+    </div>
+    <div class="apikey-meta">
+      <span><span style="color:var(--text-muted)" data-i18n="apikey_perms">Permissions:</span> Read</span>
+      <span><span style="color:var(--text-muted)" data-i18n="apikey_last_used">Last used:</span> 5 days ago</span>
+      <span class="badge badge-orange" data-i18n="apikey_inactive">Inactive</span>
+    </div>
+  </div>
+</div>
+
+<!-- INTEGRATIONS -->
+<div id="dash-integrations" class="dash-page" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <h3 style="font-size:1rem;font-weight:600" data-i18n="integrations_title">Integrations</h3>
+  </div>
+  <div class="integrations-grid">
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(59,130,246,0.1);color:var(--accent-blue)">S4</div>
+        <div><div class="int-name">SAP S/4HANA</div><div class="int-desc" data-i18n="int_sap_desc">Enterprise ERP integration</div></div>
+      </div>
+      <span class="integration-status available" data-i18n="int_available">Available</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(239,68,68,0.1);color:var(--accent-red)">ON</div>
+        <div><div class="int-name">Oracle NetSuite</div><div class="int-desc" data-i18n="int_oracle_desc">Cloud ERP connector</div></div>
+      </div>
+      <span class="integration-status available" data-i18n="int_available">Available</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(0,212,255,0.1);color:var(--accent-cyan)">Xe</div>
+        <div><div class="int-name">Xero</div><div class="int-desc" data-i18n="int_xero_desc">Accounting software</div></div>
+      </div>
+      <span class="integration-status connected" data-i18n="int_connected">Connected</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(16,185,129,0.1);color:var(--accent-green)">QB</div>
+        <div><div class="int-name">QuickBooks</div><div class="int-desc" data-i18n="int_qb_desc">Small business accounting</div></div>
+      </div>
+      <span class="integration-status available" data-i18n="int_available">Available</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(139,92,246,0.1);color:var(--accent-purple)">Sl</div>
+        <div><div class="int-name">Slack</div><div class="int-desc" data-i18n="int_slack_desc">Notifications &amp; alerts</div></div>
+      </div>
+      <span class="integration-status connected" data-i18n="int_connected">Connected</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(59,130,246,0.1);color:var(--accent-blue)">MT</div>
+        <div><div class="int-name">Microsoft Teams</div><div class="int-desc" data-i18n="int_teams_desc">Collaboration alerts</div></div>
+      </div>
+      <span class="integration-status available" data-i18n="int_available">Available</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(245,158,11,0.1);color:var(--accent-orange)">PP</div>
+        <div><div class="int-name">PEPPOL Network</div><div class="int-desc" data-i18n="int_peppol_desc">E-invoice routing</div></div>
+      </div>
+      <span class="integration-status connected" data-i18n="int_connected">Connected</span>
+    </div>
+    <div class="integration-card">
+      <div class="int-left">
+        <div class="int-icon" style="background:rgba(0,212,255,0.1);color:var(--accent-cyan)">Em</div>
+        <div><div class="int-name">Email Ingestion</div><div class="int-desc" data-i18n="int_email_desc">Auto-ingest from inbox</div></div>
+      </div>
+      <span class="integration-status connected" data-i18n="int_connected">Connected</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- end dash-content -->
+</main>
+</div>
+</div>
+
+<script>
+// === I18N TRANSLATIONS ===
+const T = {
+en: {
+  nav_problem:'Problem', nav_solution:'Solution', nav_how:'How It Works', nav_pricing:'Pricing',
+  nav_login:'Log in', nav_trial:'Start Free Trial',
+  hero_badge:'Trusted by 120+ FinOps teams across Europe',
+  hero_headline:'The Operating System for <em>IT Vendor Invoices</em>',
+  hero_subtitle:'Close the 40% IT spend visibility gap. Automate invoice processing. Stay EU compliant. One platform.',
+  hero_cta_trial:'Start 14-Day Free Trial', hero_cta_demo:'Book Enterprise Demo',
+  hero_trust_label:'Trusted by teams at',
+  hero_metric_processed:'Invoices Processed', hero_metric_compliance:'Avg Compliance Score',
+  hero_metric_time:'Avg Processing Time', hero_metric_savings:'Cost Savings',
+  social_label:'What Our Customers Say', social_title:'Trusted by finance leaders across Europe',
+  testimonial1_quote:'"Invoice Ops eliminated 5 hours/week of manual work and caught \u20AC180K in duplicate invoices in our first quarter."',
+  testimonial1_title:'VP Finance, TechScale GmbH',
+  testimonial2_quote:'"We achieved EN 16931 compliance in 2 weeks instead of the 6 months our consultants quoted. Game changer."',
+  testimonial2_title:'CFO, CloudNine SAS',
+  testimonial3_quote:'"The ROI was immediate. We detected rate anomalies that saved us \u20AC340K annually across our vendor portfolio."',
+  testimonial3_title:'Head of IT Procurement, Nordic Digital AS',
+  roi_label:'ROI Calculator', roi_title:'See your potential savings',
+  roi_subtitle:'Adjust the sliders to estimate your annual return on investment with Invoice Ops.',
+  roi_invoices_label:'Monthly invoices', roi_avg_label:'Average invoice value (\u20AC)',
+  roi_hours_label:'Hours/week on invoice processing',
+  roi_time_saved:'Annual Time Saved', roi_anomaly:'Duplicate/Anomaly Detection',
+  roi_compliance_avoid:'Compliance Penalty Avoidance', roi_total_label:'Total Annual ROI',
+  roi_cta:'Get Your Custom ROI Report',
+  problem_label:'The Problem', problem_title:'Your IT spend has a blind spot',
+  problem_subtitle:'Most companies track cloud costs but lose vendor invoices in email chains and spreadsheets, creating costly gaps.',
+  problem_card1_title:'40% IT Spend Invisible',
+  problem_card1_desc:"Cloud costs tracked, vendor invoices lost in spreadsheets. You're flying blind on nearly half your IT budget.",
+  problem_card2_title:'\u20AC140k\u2013\u20AC430k Annual Value at Risk',
+  problem_card2_desc:'No visibility into duplicate invoices, rate changes, and unused licenses. Money leaks go undetected.',
+  problem_card3_title:'Manual Invoice Processing',
+  problem_card3_desc:'5\u201310 hours/week on email/PDF sorting, coding, and VAT compliance. Your team deserves better than data entry.',
+  problem_card4_title:'No Compliance Readiness',
+  problem_card4_desc:'E-invoice mandates (Germany Jan 2025, France Sep 2026) require EN 16931 + PEPPOL. Non-compliance means penalties.',
+  problem_source:'Source: Gartner 2025 FinOps Report',
+  solution_label:'The Solution',
+  solution_title:'One platform. Full visibility. Total compliance.',
+  solution_subtitle:'Invoice Ops unifies FinOps vendor cost visibility with EN 16931 e-invoice compliance in a single, automated workflow.',
+  solution_flow1:'Invoice Ingestion & OCR Extraction',
+  solution_flow2:'Classification & Cost Allocation',
+  solution_flow3:'Compliance & PEPPOL Export',
+  solution_feat1_title:'Unified Vendor Dashboard',
+  solution_feat1_desc:'See all IT vendor costs in one view. Cloud, SaaS, hardware, consulting \u2014 every invoice accounted for.',
+  solution_feat2_title:'AI-Powered Extraction',
+  solution_feat2_desc:'90%+ accuracy OCR with confidence scores. No more manual data entry from PDFs and emails.',
+  solution_feat3_title:'Auto-Classification',
+  solution_feat3_desc:'Invoices auto-categorized by project, team, environment. Cost drivers mapped instantly.',
+  solution_feat4_title:'Fraud & Anomaly Detection',
+  solution_feat4_desc:'AI detects duplicate invoices, rate anomalies, and suspicious patterns before you pay.',
+  solution_feat5_title:'EU E-Invoice Compliance',
+  solution_feat5_desc:'Generate EN 16931 compliant e-invoices. Sign, route via PEPPOL, archive with WORM compliance.',
+  how_label:'How It Works', how_title:'From email to compliant e-invoice in 5 steps',
+  how_subtitle:'Automated end-to-end invoice lifecycle \u2014 from PDF to PEPPOL delivery.',
+  how_step1_label:'Step 1', how_step1_title:'Ingest', how_step1_desc:'Receive invoices via email, PDF upload, API, or PEPPOL network',
+  how_step2_label:'Step 2', how_step2_title:'Extract', how_step2_desc:'AI/OCR processes documents with 90%+ accuracy and confidence scores',
+  how_step3_label:'Step 3', how_step3_title:'Classify', how_step3_desc:'Auto-categorize by cost driver \u2014 project, team, environment, category',
+  how_step4_label:'Step 4', how_step4_title:'Allocate', how_step4_desc:'Tag for chargeback, cost center, and business unit attribution',
+  how_step5_label:'Step 5', how_step5_title:'Detect & Comply', how_step5_desc:'AI fraud detection + EN 16931 e-invoices, PEPPOL routing, WORM archive',
+  ent_label:'Enterprise Grade', ent_title:'Built for scale, security, and compliance',
+  ent_subtitle:'Everything enterprise teams need to process invoices at scale with confidence.',
+  ent_feat1_title:'Audit Trail & Compliance', ent_feat1_desc:'Immutable audit logs, GDPR-ready data retention, SOC 2 Type II compliant. Every action tracked and exportable.',
+  ent_feat2_title:'API-First Architecture', ent_feat2_desc:'RESTful API with key management, customer webhooks, 99.99% uptime SLA. Build custom integrations effortlessly.',
+  ent_feat3_title:'Approval Workflows', ent_feat3_desc:'Configurable approval chains, amount thresholds, role-based routing. Multi-level sign-off for high-value invoices.',
+  ent_feat4_title:'ERP Integrations', ent_feat4_desc:'SAP, Oracle, Xero, QuickBooks connectors. PEPPOL Access Point ready. Seamless two-way data sync.',
+  ent_feat5_title:'Multi-Tenant Security', ent_feat5_desc:'Tenant isolation, AES-256 encryption at rest, SSO/SAML support. Your data never leaves your jurisdiction.',
+  ent_feat6_title:'Advanced Analytics', ent_feat6_desc:'Custom dashboards, spend forecasting, anomaly detection, exportable reports. Data-driven procurement decisions.',
+  pricing_label:'Pricing', pricing_title:'Two tracks, one platform',
+  pricing_subtitle:'Choose your track or combine both for complete coverage. Start free, scale as you grow.',
+  pricing_monthly:'Monthly', pricing_annual:'Annual', pricing_save:'Save 20%',
+  pricing_finops_track:'FinOps Track', pricing_finops_desc:'Vendor Cost Visibility',
+  pricing_starter:'Starter', pricing_growth:'Growth', pricing_enterprise:'Enterprise',
+  pricing_mo_base:'/mo base', pricing_mo:'/mo', pricing_mo3:'/mo', pricing_mo4:'/mo',
+  pricing_custom:'Custom', pricing_custom2:'Custom',
+  pricing_finops_starter_detail:'+ \u20AC0.05 per invoice \u00B7 Up to 5,000 invoices/mo \u00B7 \u20AC250/mo usage',
+  pricing_finops_growth_detail:'+ \u20AC0.03 per invoice \u00B7 10k\u201320k invoices/mo \u00B7 \u20AC800\u2013\u20AC1,100/mo',
+  pricing_get_started:'Get Started Free', pricing_start_trial:'Start Free Trial', pricing_contact:'Contact Sales',
+  pricing_compliance_track:'E-Invoice Compliance Track', pricing_compliance_desc:'Regulatory Ready \u2014 EN 16931 & PEPPOL',
+  pricing_starter2:'Starter', pricing_growth2:'Growth', pricing_enterprise2:'Enterprise',
+  pricing_comp_starter_detail:'+ \u20AC0.02 per invoice \u00B7 Full EN 16931 compliance',
+  pricing_comp_growth_detail:'+ \u20AC0.015 per invoice \u00B7 \u20AC1,050\u2013\u20AC1,950/mo',
+  pricing_start_trial2:'Start Free Trial', pricing_start_trial3:'Start Free Trial', pricing_contact2:'Contact Sales',
+  pef_infra:'Dedicated infrastructure', pef_sla:'Custom SLA', pef_sso:'SSO/SAML', pef_csm:'Dedicated CSM', pef_onprem:'On-premise option',
+  faq_title:'Frequently Asked Questions',
+  faq1_q:'How does the 14-day trial work?',
+  faq1_a:'You get full access to all features for 14 days with no credit card required. At the end of the trial, choose a plan that fits your needs or your account will be paused -- no charges, no data loss.',
+  faq2_q:'Can I switch plans anytime?',
+  faq2_a:'Yes. Upgrade or downgrade at any time. When you upgrade, the new rate applies immediately with prorated billing. Downgrades take effect at the next billing cycle.',
+  faq3_q:'Is my data safe?',
+  faq3_a:'Absolutely. We are SOC 2 Type II certified, GDPR compliant, and ISO 27001 certified. All data is encrypted at rest (AES-256) and in transit (TLS 1.3). Data residency options available for EU customers.',
+  faq4_q:'Do you offer on-premise deployment?',
+  faq4_a:'Yes. Our Enterprise plan includes the option for on-premise or private cloud deployment. Contact our sales team for architecture details and pricing tailored to your infrastructure requirements.',
+  trust_backed:'Backed by <span>Y Combinator \u2022 Balderton Capital \u2022 Point Nine</span>',
+  cta_label:'Get Started', cta_title:'Ready to save \u20AC140K+ per year?',
+  cta_subtitle:'Join forward-thinking IT and finance teams who have eliminated invoice blind spots and achieved EU compliance.',
+  cta_trial:'Start Your Free Trial', cta_demo:'Book a Demo',
+  footer_desc:'The operating system for IT vendor invoices. Close the visibility gap, automate compliance, and save.',
+  footer_product:'Product', footer_features:'Features', footer_pricing:'Pricing', footer_integrations:'Integrations',
+  footer_api_docs:'API Docs', footer_changelog:'Changelog',
+  footer_company:'Company', footer_about:'About', footer_careers:'Careers', footer_blog:'Blog', footer_press:'Press',
+  footer_resources:'Resources', footer_documentation:'Documentation', footer_help:'Help Center', footer_status:'Status', footer_community:'Community',
+  footer_legal:'Legal', footer_privacy:'Privacy Policy', footer_terms:'Terms of Service', footer_dpa:'DPA', footer_cookies:'Cookie Policy',
+  footer_text:'\u00A9 2026 Invoice Ops. All rights reserved. EN 16931 & PEPPOL compliant.',
+  login_title:'Welcome back', login_subtitle:'Log in to your account',
+  login_email_label:'Email', login_email_placeholder:'you@company.com',
+  login_password_label:'Password', login_password_placeholder:'Enter your password',
+  login_btn:'Log In', login_footer_text:"Don't have an account?", login_footer_link:'Sign up',
+  signup_title:'Start your free trial', signup_subtitle:'14 days free. No credit card required.',
+  signup_name_label:'Full Name', signup_name_placeholder:'Jane Smith',
+  signup_email_label:'Work Email', signup_email_placeholder:'jane@company.com',
+  signup_company_label:'Company', signup_company_placeholder:'Acme Corp',
+  signup_password_label:'Password', signup_password_placeholder:'Create a password',
+  signup_btn:'Create Account', signup_footer_text:'Already have an account?', signup_footer_link:'Log in',
+  sidebar_dashboard:'Dashboard', sidebar_invoices:'Invoices', sidebar_vendors:'Vendors',
+  sidebar_analytics:'Analytics', sidebar_compliance:'Compliance', sidebar_approvals:'Approvals',
+  sidebar_settings:'Settings', sidebar_audit:'Audit Log', sidebar_apikeys:'API Keys',
+  sidebar_integrations:'Integrations', sidebar_signout:'Sign Out',
+  dash_search_placeholder:'Search invoices...',
+  kpi_total_invoices:'Total Invoices', kpi_monthly_spend:'Monthly Spend',
+  kpi_savings:'Savings Detected', kpi_compliance:'Compliance Score', kpi_compliant_badge:'Compliant',
+  chart_spend_trend:'Monthly Spend Trend', chart_vendor_breakdown:'Vendor Breakdown',
+  chart_spend_category:'Spend by Category', chart_volume_trend:'Invoice Volume Trend',
+  chart_savings:'Cost Savings Over Time', chart_processing:'Processing Time (Avg Days)',
+  table_recent_invoices:'Recent Invoices', table_all_invoices:'All Invoices',
+  th_invoice:'Invoice', th_invoice_id:'Invoice ID', th_vendor:'Vendor', th_amount:'Amount',
+  th_date:'Date', th_status:'Status', th_category:'Category', th_confidence:'Confidence',
+  btn_upload:'Upload', btn_upload_invoice:'Upload Invoice',
+  status_processed:'Processed', status_pending:'Pending', status_flagged:'Flagged',
+  filter_all_status:'All Status', filter_processed:'Processed', filter_pending:'Pending', filter_flagged:'Flagged',
+  cat_cloud:'Cloud', cat_monitoring:'Monitoring', cat_data:'Data', cat_streaming:'Streaming',
+  cat_database:'Database', cat_devops:'DevOps', cat_search:'Search',
+  vendors_all_title:'All Vendors', btn_add_vendor:'Add Vendor',
+  vendor_invoices:'invoices',
+  vendor_cat_cloud:'Cloud Infrastructure', vendor_cat_monitoring:'Monitoring & Observability',
+  vendor_cat_data:'Data Warehousing', vendor_cat_streaming:'Data Streaming',
+  vendor_cat_database:'Database', vendor_cat_devops:'DevOps & Security',
+  vendor_cat_search:'Search & Analytics', vendor_cat_cdn:'CDN & Security',
+  comp_en_title:'EN 16931 Compliance', comp_score:'Compliance Score',
+  comp_xml:'XML Schema Validation', comp_fields:'Mandatory Field Completeness',
+  comp_vat:'VAT Calculation Accuracy', comp_sig:'Digital Signature (XAdES)', comp_crossborder:'Cross-border VAT Mapping',
+  comp_peppol_title:'PEPPOL Readiness', comp_readiness:'Readiness Score',
+  comp_bis:'PEPPOL BIS 3.0 Format', comp_access:'Access Point Registration',
+  comp_smp:'SMP/SML Lookup', comp_endpoint:'Production Endpoint Testing', comp_worm:'WORM Archive Integration',
+  comp_timeline_title:'Regulatory Timeline',
+  comp_de_date:'JAN 2025 \u2014 ACTIVE', comp_de_title:'Germany B2B E-Invoice',
+  comp_de_desc:'Mandatory reception of e-invoices for all B2B transactions.',
+  comp_fr_date:'SEP 2026 \u2014 UPCOMING', comp_fr_title:'France E-Invoicing Mandate',
+  comp_fr_desc:'All B2B invoices must be issued as structured e-invoices via PDP.',
+  comp_eu_date:'2028 \u2014 PLANNED', comp_eu_title:'EU ViDA Regulation',
+  comp_eu_desc:'EU-wide digital reporting & real-time e-invoicing requirements.',
+  approvals_rules_title:'Approval Rules', btn_add_rule:'Add Rule',
+  rule1_condition:'Amount > \u20AC10,000', rule1_action:'Requires CFO approval',
+  rule2_condition:'New vendor (first invoice)', rule2_action:'Requires procurement approval',
+  rule3_condition:'Confidence score < 80%', rule3_action:'Requires manual review',
+  rule_active:'Active', approvals_pending_title:'Pending Approvals',
+  pending1_desc:'\u20AC15,340.00 \u00B7 Triggered: Amount > \u20AC10,000 \u00B7 Awaiting CFO approval',
+  pending2_desc:'\u20AC3,200.00 \u00B7 Triggered: Confidence < 80% (67%) \u00B7 Awaiting manual review',
+  pending3_desc:'\u20AC7,800.00 \u00B7 Triggered: New vendor \u00B7 Awaiting procurement approval',
+  btn_approve:'Approve', btn_reject:'Reject',
+  settings_account:'Account Settings', settings_company_name:'Company Name',
+  settings_account_email:'Account Email', settings_vat:'VAT Number',
+  settings_processing:'Invoice Processing',
+  settings_autoclassify:'Auto-classify invoices',
+  settings_autoclassify_desc:'Automatically categorize invoices by cost driver using AI',
+  settings_duplicate:'Duplicate detection',
+  settings_duplicate_desc:'Flag potential duplicate invoices before processing',
+  settings_autoapprove:'Auto-approve under threshold',
+  settings_autoapprove_desc:'Auto-approve invoices under \u20AC500 with 90%+ confidence',
+  settings_compliance:'Compliance & Export',
+  settings_en_gen:'EN 16931 e-invoice generation',
+  settings_en_gen_desc:'Auto-generate compliant e-invoices for processed documents',
+  settings_peppol:'PEPPOL routing',
+  settings_peppol_desc:'Route generated e-invoices via PEPPOL network',
+  settings_worm:'WORM archiving',
+  settings_worm_desc:'Archive all processed invoices with write-once-read-many compliance',
+  settings_subscription:'Subscription', settings_current_plan:'Current Plan',
+  settings_plan_value:'FinOps Growth + Compliance Starter',
+  btn_edit:'Edit', btn_upgrade:'Upgrade Plan',
+  audit_title:'Audit Log', audit_filter_all:'All Actions', audit_filter_login:'Login',
+  audit_filter_create:'Create', audit_filter_update:'Update', audit_filter_delete:'Delete',
+  audit_th_time:'Timestamp', audit_th_user:'User', audit_th_action:'Action',
+  audit_th_entity:'Entity', audit_th_details:'Details',
+  apikeys_title:'API Keys', btn_generate_key:'Generate New Key',
+  apikey_perms:'Permissions:', apikey_last_used:'Last used:', apikey_active:'Active', apikey_inactive:'Inactive',
+  integrations_title:'Integrations',
+  int_sap_desc:'Enterprise ERP integration', int_oracle_desc:'Cloud ERP connector',
+  int_xero_desc:'Accounting software', int_qb_desc:'Small business accounting',
+  int_slack_desc:'Notifications & alerts', int_teams_desc:'Collaboration alerts',
+  int_peppol_desc:'E-invoice routing', int_email_desc:'Auto-ingest from inbox',
+  int_connected:'Connected', int_available:'Available'
+},
+fr: {
+  nav_problem:'Probleme', nav_solution:'Solution', nav_how:'Comment ca marche', nav_pricing:'Tarifs',
+  nav_login:'Connexion', nav_trial:'Essai gratuit',
+  hero_badge:'Approuve par 120+ equipes FinOps en Europe',
+  hero_headline:'Le systeme d\'exploitation pour les <em>factures fournisseurs IT</em>',
+  hero_subtitle:'Comblez le deficit de visibilite de 40% des depenses IT. Automatisez le traitement des factures. Restez conforme UE. Une seule plateforme.',
+  hero_cta_trial:'Essai gratuit 14 jours', hero_cta_demo:'Reserver une demo Enterprise',
+  hero_trust_label:'Utilise par les equipes de',
+  hero_metric_processed:'Factures traitees', hero_metric_compliance:'Score de conformite moy.',
+  hero_metric_time:'Temps de traitement moy.', hero_metric_savings:'Economies realisees',
+  social_label:'Ce que disent nos clients', social_title:'La confiance des leaders financiers europeens',
+  testimonial1_quote:'"Invoice Ops a elimine 5h/semaine de travail manuel et detecte 180K\u20AC de doublons au premier trimestre."',
+  testimonial1_title:'VP Finance, TechScale GmbH',
+  testimonial2_quote:'"Nous avons atteint la conformite EN 16931 en 2 semaines au lieu des 6 mois prevus par nos consultants."',
+  testimonial2_title:'CFO, CloudNine SAS',
+  testimonial3_quote:'"Le ROI a ete immediat. Nous avons detecte des anomalies tarifaires qui nous ont fait economiser 340K\u20AC par an."',
+  testimonial3_title:'Dir. achats IT, Nordic Digital AS',
+  roi_label:'Calculateur ROI', roi_title:'Estimez vos economies potentielles',
+  roi_subtitle:'Ajustez les curseurs pour estimer votre retour sur investissement annuel avec Invoice Ops.',
+  roi_invoices_label:'Factures mensuelles', roi_avg_label:'Valeur moyenne facture (\u20AC)',
+  roi_hours_label:'Heures/semaine traitement factures',
+  roi_time_saved:'Temps annuel economise', roi_anomaly:'Detection doublons/anomalies',
+  roi_compliance_avoid:'Penalites conformite evitees', roi_total_label:'ROI annuel total',
+  roi_cta:'Obtenez votre rapport ROI personnalise',
+  problem_label:'Le Probleme', problem_title:'Vos depenses IT ont un angle mort',
+  problem_subtitle:'La plupart des entreprises suivent les couts cloud mais perdent les factures fournisseurs dans les emails et tableurs.',
+  problem_card1_title:'40% des depenses IT invisibles',
+  problem_card1_desc:'Les couts cloud sont suivis, les factures fournisseurs perdues dans les tableurs.',
+  problem_card2_title:'\u20AC140k\u2013\u20AC430k de valeur annuelle a risque',
+  problem_card2_desc:'Aucune visibilite sur les doublons, changements de tarifs et licences inutilisees.',
+  problem_card3_title:'Traitement manuel des factures',
+  problem_card3_desc:'5 a 10h/semaine pour trier emails/PDF, coder et assurer la conformite TVA.',
+  problem_card4_title:'Aucune preparation a la conformite',
+  problem_card4_desc:'Les mandats e-facture exigent EN 16931 + PEPPOL. La non-conformite entraine des penalites.',
+  problem_source:'Source: Rapport Gartner FinOps 2025',
+  solution_label:'La Solution',
+  solution_title:'Une plateforme. Visibilite totale. Conformite complete.',
+  solution_subtitle:'Invoice Ops unifie la visibilite des couts fournisseurs avec la conformite e-facture EN 16931.',
+  solution_flow1:'Ingestion de factures et extraction OCR',
+  solution_flow2:'Classification et allocation des couts',
+  solution_flow3:'Conformite et export PEPPOL',
+  solution_feat1_title:'Tableau de bord fournisseurs unifie',
+  solution_feat1_desc:'Visualisez tous les couts fournisseurs IT en un coup d\'oeil.',
+  solution_feat2_title:'Extraction par IA',
+  solution_feat2_desc:'OCR avec 90%+ de precision et scores de confiance.',
+  solution_feat3_title:'Classification automatique',
+  solution_feat3_desc:'Factures auto-classees par projet, equipe, environnement.',
+  solution_feat4_title:'Detection de fraude et anomalies',
+  solution_feat4_desc:'L\'IA detecte les doublons, anomalies tarifaires et patterns suspects.',
+  solution_feat5_title:'Conformite e-facture UE',
+  solution_feat5_desc:'Generez des e-factures conformes EN 16931. Signez, routez via PEPPOL.',
+  how_label:'Comment ca marche', how_title:'De l\'email a la e-facture conforme en 5 etapes',
+  how_subtitle:'Cycle de vie automatise de bout en bout.',
+  how_step1_label:'Etape 1', how_step1_title:'Ingestion', how_step1_desc:'Recevez les factures par email, PDF, API ou PEPPOL',
+  how_step2_label:'Etape 2', how_step2_title:'Extraction', how_step2_desc:'L\'IA/OCR traite avec 90%+ de precision',
+  how_step3_label:'Etape 3', how_step3_title:'Classification', how_step3_desc:'Classification auto par inducteur de cout',
+  how_step4_label:'Etape 4', how_step4_title:'Allocation', how_step4_desc:'Etiquetage pour refacturation et centre de couts',
+  how_step5_label:'Etape 5', how_step5_title:'Detection et conformite', how_step5_desc:'Detection de fraude IA + e-factures EN 16931',
+  ent_label:'Qualite Enterprise', ent_title:'Concu pour l\'echelle, la securite et la conformite',
+  ent_subtitle:'Tout ce dont les equipes enterprise ont besoin.',
+  ent_feat1_title:'Piste d\'audit et conformite', ent_feat1_desc:'Journaux d\'audit immuables, retention RGPD, SOC 2 Type II.',
+  ent_feat2_title:'Architecture API-First', ent_feat2_desc:'API RESTful avec gestion de cles, webhooks, SLA 99.99%.',
+  ent_feat3_title:'Flux d\'approbation', ent_feat3_desc:'Chaines d\'approbation configurables, seuils de montant, routage par role.',
+  ent_feat4_title:'Integrations ERP', ent_feat4_desc:'Connecteurs SAP, Oracle, Xero, QuickBooks. PEPPOL ready.',
+  ent_feat5_title:'Securite multi-tenant', ent_feat5_desc:'Isolation tenant, chiffrement AES-256, SSO/SAML.',
+  ent_feat6_title:'Analytique avancee', ent_feat6_desc:'Tableaux de bord personnalises, previsions, detection d\'anomalies.',
+  pricing_label:'Tarifs', pricing_title:'Deux pistes, une plateforme',
+  pricing_subtitle:'Choisissez votre piste ou combinez les deux.',
+  pricing_monthly:'Mensuel', pricing_annual:'Annuel', pricing_save:'Economisez 20%',
+  pricing_finops_track:'Piste FinOps', pricing_finops_desc:'Visibilite des couts fournisseurs',
+  pricing_starter:'Starter', pricing_growth:'Growth', pricing_enterprise:'Enterprise',
+  pricing_mo_base:'/mois base', pricing_mo:'/mois', pricing_mo3:'/mois', pricing_mo4:'/mois',
+  pricing_custom:'Sur mesure', pricing_custom2:'Sur mesure',
+  pricing_finops_starter_detail:'+ \u20AC0,05 par facture \u00B7 Jusqu\'a 5 000 factures/mois',
+  pricing_finops_growth_detail:'+ \u20AC0,03 par facture \u00B7 10k\u201320k factures/mois',
+  pricing_get_started:'Commencer gratuitement', pricing_start_trial:'Essai gratuit', pricing_contact:'Contacter les ventes',
+  pricing_compliance_track:'Piste conformite e-facture', pricing_compliance_desc:'Pret pour la reglementation',
+  pricing_starter2:'Starter', pricing_growth2:'Growth', pricing_enterprise2:'Enterprise',
+  pricing_comp_starter_detail:'+ \u20AC0,02 par facture \u00B7 Conformite EN 16931 complete',
+  pricing_comp_growth_detail:'+ \u20AC0,015 par facture',
+  pricing_start_trial2:'Essai gratuit', pricing_start_trial3:'Essai gratuit', pricing_contact2:'Contacter les ventes',
+  pef_infra:'Infrastructure dediee', pef_sla:'SLA personnalise', pef_sso:'SSO/SAML', pef_csm:'CSM dedie', pef_onprem:'Option on-premise',
+  faq_title:'Questions frequentes',
+  faq1_q:'Comment fonctionne l\'essai de 14 jours ?',
+  faq1_a:'Acces complet a toutes les fonctionnalites pendant 14 jours sans carte de credit.',
+  faq2_q:'Puis-je changer de plan a tout moment ?',
+  faq2_a:'Oui. Mettez a niveau ou retrogradez a tout moment.',
+  faq3_q:'Mes donnees sont-elles en securite ?',
+  faq3_a:'Absolument. Certifie SOC 2 Type II, conforme RGPD et ISO 27001.',
+  faq4_q:'Proposez-vous un deploiement on-premise ?',
+  faq4_a:'Oui. Notre plan Enterprise inclut l\'option de deploiement on-premise.',
+  trust_backed:'Soutenu par <span>Y Combinator \u2022 Balderton Capital \u2022 Point Nine</span>',
+  cta_label:'Commencer', cta_title:'Pret a economiser 140K\u20AC+ par an ?',
+  cta_subtitle:'Rejoignez les equipes visionnaires qui ont elimine les angles morts.',
+  cta_trial:'Commencer votre essai gratuit', cta_demo:'Reserver une demo',
+  footer_desc:'Le systeme d\'exploitation pour les factures fournisseurs IT.',
+  footer_product:'Produit', footer_features:'Fonctionnalites', footer_pricing:'Tarifs', footer_integrations:'Integrations',
+  footer_api_docs:'Docs API', footer_changelog:'Changelog',
+  footer_company:'Entreprise', footer_about:'A propos', footer_careers:'Carrieres', footer_blog:'Blog', footer_press:'Presse',
+  footer_resources:'Ressources', footer_documentation:'Documentation', footer_help:'Centre d\'aide', footer_status:'Statut', footer_community:'Communaute',
+  footer_legal:'Legal', footer_privacy:'Politique de confidentialite', footer_terms:'CGV', footer_dpa:'DPA', footer_cookies:'Cookies',
+  footer_text:'\u00A9 2026 Invoice Ops. Tous droits reserves. Conforme EN 16931 et PEPPOL.',
+  login_title:'Bon retour', login_subtitle:'Connectez-vous a votre compte',
+  login_email_label:'Email', login_email_placeholder:'vous@entreprise.com',
+  login_password_label:'Mot de passe', login_password_placeholder:'Entrez votre mot de passe',
+  login_btn:'Se connecter', login_footer_text:'Pas encore de compte ?', login_footer_link:'S\'inscrire',
+  signup_title:'Commencez votre essai gratuit', signup_subtitle:'14 jours gratuits. Pas de carte de credit.',
+  signup_name_label:'Nom complet', signup_name_placeholder:'Jean Dupont',
+  signup_email_label:'Email professionnel', signup_email_placeholder:'jean@entreprise.com',
+  signup_company_label:'Entreprise', signup_company_placeholder:'Acme Corp',
+  signup_password_label:'Mot de passe', signup_password_placeholder:'Creez un mot de passe',
+  signup_btn:'Creer un compte', signup_footer_text:'Vous avez deja un compte ?', signup_footer_link:'Se connecter',
+  sidebar_dashboard:'Tableau de bord', sidebar_invoices:'Factures', sidebar_vendors:'Fournisseurs',
+  sidebar_analytics:'Analytique', sidebar_compliance:'Conformite', sidebar_approvals:'Approbations',
+  sidebar_settings:'Parametres', sidebar_audit:'Journal d\'audit', sidebar_apikeys:'Cles API',
+  sidebar_integrations:'Integrations', sidebar_signout:'Deconnexion',
+  dash_search_placeholder:'Rechercher des factures...',
+  kpi_total_invoices:'Total factures', kpi_monthly_spend:'Depenses mensuelles',
+  kpi_savings:'Economies detectees', kpi_compliance:'Score de conformite', kpi_compliant_badge:'Conforme',
+  chart_spend_trend:'Tendance des depenses mensuelles', chart_vendor_breakdown:'Repartition fournisseurs',
+  chart_spend_category:'Depenses par categorie', chart_volume_trend:'Tendance du volume',
+  chart_savings:'Economies au fil du temps', chart_processing:'Temps de traitement (jours moy.)',
+  table_recent_invoices:'Factures recentes', table_all_invoices:'Toutes les factures',
+  th_invoice:'Facture', th_invoice_id:'ID Facture', th_vendor:'Fournisseur', th_amount:'Montant',
+  th_date:'Date', th_status:'Statut', th_category:'Categorie', th_confidence:'Confiance',
+  btn_upload:'Telecharger', btn_upload_invoice:'Telecharger facture',
+  status_processed:'Traitee', status_pending:'En attente', status_flagged:'Signalee',
+  filter_all_status:'Tous les statuts', filter_processed:'Traitee', filter_pending:'En attente', filter_flagged:'Signalee',
+  cat_cloud:'Cloud', cat_monitoring:'Surveillance', cat_data:'Donnees', cat_streaming:'Streaming',
+  cat_database:'Base de donnees', cat_devops:'DevOps', cat_search:'Recherche',
+  vendors_all_title:'Tous les fournisseurs', btn_add_vendor:'Ajouter fournisseur',
+  vendor_invoices:'factures',
+  vendor_cat_cloud:'Infrastructure Cloud', vendor_cat_monitoring:'Surveillance et observabilite',
+  vendor_cat_data:'Entrepot de donnees', vendor_cat_streaming:'Streaming de donnees',
+  vendor_cat_database:'Base de donnees', vendor_cat_devops:'DevOps et securite',
+  vendor_cat_search:'Recherche et analytique', vendor_cat_cdn:'CDN et securite',
+  comp_en_title:'Conformite EN 16931', comp_score:'Score de conformite',
+  comp_xml:'Validation schema XML', comp_fields:'Completude des champs obligatoires',
+  comp_vat:'Exactitude du calcul TVA', comp_sig:'Signature numerique (XAdES)', comp_crossborder:'Mapping TVA transfrontalier',
+  comp_peppol_title:'Etat de preparation PEPPOL', comp_readiness:'Score de preparation',
+  comp_bis:'Format PEPPOL BIS 3.0', comp_access:'Enregistrement point d\'acces',
+  comp_smp:'Recherche SMP/SML', comp_endpoint:'Test endpoint de production', comp_worm:'Integration archive WORM',
+  comp_timeline_title:'Calendrier reglementaire',
+  comp_de_date:'JANV 2025 \u2014 ACTIF', comp_de_title:'E-facture B2B Allemagne',
+  comp_de_desc:'Reception obligatoire des e-factures pour toutes les transactions B2B.',
+  comp_fr_date:'SEPT 2026 \u2014 A VENIR', comp_fr_title:'Mandat e-facturation France',
+  comp_fr_desc:'Toutes les factures B2B doivent etre emises comme e-factures structurees.',
+  comp_eu_date:'2028 \u2014 PREVU', comp_eu_title:'Reglement ViDA de l\'UE',
+  comp_eu_desc:'Reporting numerique et e-facturation en temps reel a l\'echelle de l\'UE.',
+  approvals_rules_title:'Regles d\'approbation', btn_add_rule:'Ajouter une regle',
+  rule1_condition:'Montant > 10 000\u20AC', rule1_action:'Approbation du CFO requise',
+  rule2_condition:'Nouveau fournisseur', rule2_action:'Approbation des achats requise',
+  rule3_condition:'Score de confiance < 80%', rule3_action:'Revue manuelle requise',
+  rule_active:'Actif', approvals_pending_title:'Approbations en attente',
+  pending1_desc:'15 340\u20AC \u00B7 Declencheur: Montant > 10 000\u20AC \u00B7 En attente CFO',
+  pending2_desc:'3 200\u20AC \u00B7 Declencheur: Confiance < 80% (67%) \u00B7 En attente revue',
+  pending3_desc:'7 800\u20AC \u00B7 Declencheur: Nouveau fournisseur \u00B7 En attente achats',
+  btn_approve:'Approuver', btn_reject:'Rejeter',
+  settings_account:'Parametres du compte', settings_company_name:'Nom de l\'entreprise',
+  settings_account_email:'Email du compte', settings_vat:'Numero de TVA',
+  settings_processing:'Traitement des factures',
+  settings_autoclassify:'Classification automatique',
+  settings_autoclassify_desc:'Categoriser automatiquement les factures par inducteur de cout',
+  settings_duplicate:'Detection des doublons',
+  settings_duplicate_desc:'Signaler les potentiels doublons avant traitement',
+  settings_autoapprove:'Approbation auto sous seuil',
+  settings_autoapprove_desc:'Approuver auto les factures sous 500\u20AC avec 90%+ confiance',
+  settings_compliance:'Conformite et export',
+  settings_en_gen:'Generation e-factures EN 16931',
+  settings_en_gen_desc:'Generer automatiquement des e-factures conformes',
+  settings_peppol:'Routage PEPPOL',
+  settings_peppol_desc:'Router les e-factures via le reseau PEPPOL',
+  settings_worm:'Archivage WORM',
+  settings_worm_desc:'Archiver avec conformite ecriture unique lecture multiple',
+  settings_subscription:'Abonnement', settings_current_plan:'Plan actuel',
+  settings_plan_value:'FinOps Growth + Conformite Starter',
+  btn_edit:'Modifier', btn_upgrade:'Mettre a niveau',
+  audit_title:'Journal d\'audit', audit_filter_all:'Toutes les actions', audit_filter_login:'Connexion',
+  audit_filter_create:'Creation', audit_filter_update:'Mise a jour', audit_filter_delete:'Suppression',
+  audit_th_time:'Horodatage', audit_th_user:'Utilisateur', audit_th_action:'Action',
+  audit_th_entity:'Entite', audit_th_details:'Details',
+  apikeys_title:'Cles API', btn_generate_key:'Generer une nouvelle cle',
+  apikey_perms:'Permissions:', apikey_last_used:'Derniere utilisation:', apikey_active:'Actif', apikey_inactive:'Inactif',
+  integrations_title:'Integrations',
+  int_sap_desc:'Integration ERP entreprise', int_oracle_desc:'Connecteur ERP Cloud',
+  int_xero_desc:'Logiciel comptable', int_qb_desc:'Comptabilite PME',
+  int_slack_desc:'Notifications et alertes', int_teams_desc:'Alertes collaboration',
+  int_peppol_desc:'Routage e-facture', int_email_desc:'Ingestion auto depuis boite mail',
+  int_connected:'Connecte', int_available:'Disponible'
+},
+es: {
+  nav_problem:'Problema', nav_solution:'Solucion', nav_how:'Como funciona', nav_pricing:'Precios',
+  nav_login:'Iniciar sesion', nav_trial:'Prueba gratuita',
+  hero_badge:'Confianza de 120+ equipos FinOps en Europa',
+  hero_headline:'El sistema operativo para <em>facturas de proveedores TI</em>',
+  hero_subtitle:'Cierre la brecha del 40% en visibilidad de gastos TI. Automatice facturas. Cumpla con la UE. Una plataforma.',
+  hero_cta_trial:'Prueba gratuita 14 dias', hero_cta_demo:'Reservar demo Enterprise',
+  hero_trust_label:'Usado por equipos en',
+  hero_metric_processed:'Facturas procesadas', hero_metric_compliance:'Puntuacion cumplimiento prom.',
+  hero_metric_time:'Tiempo procesamiento prom.', hero_metric_savings:'Ahorro en costos',
+  social_label:'Lo que dicen nuestros clientes', social_title:'La confianza de lideres financieros europeos',
+  testimonial1_quote:'"Invoice Ops elimino 5h/semana de trabajo manual y detecto 180K\u20AC en facturas duplicadas en nuestro primer trimestre."',
+  testimonial1_title:'VP Finanzas, TechScale GmbH',
+  testimonial2_quote:'"Logramos cumplimiento EN 16931 en 2 semanas en vez de los 6 meses que nuestros consultores cotizaron."',
+  testimonial2_title:'CFO, CloudNine SAS',
+  testimonial3_quote:'"El ROI fue inmediato. Detectamos anomalias de tarifas que nos ahorraron 340K\u20AC anuales."',
+  testimonial3_title:'Dir. Compras TI, Nordic Digital AS',
+  roi_label:'Calculadora ROI', roi_title:'Vea sus ahorros potenciales',
+  roi_subtitle:'Ajuste los controles para estimar su retorno de inversion anual con Invoice Ops.',
+  roi_invoices_label:'Facturas mensuales', roi_avg_label:'Valor promedio factura (\u20AC)',
+  roi_hours_label:'Horas/semana procesando facturas',
+  roi_time_saved:'Tiempo anual ahorrado', roi_anomaly:'Deteccion duplicados/anomalias',
+  roi_compliance_avoid:'Penalidades cumplimiento evitadas', roi_total_label:'ROI anual total',
+  roi_cta:'Obtenga su reporte ROI personalizado',
+  problem_label:'El Problema', problem_title:'Su gasto en TI tiene un punto ciego',
+  problem_subtitle:'La mayoria de las empresas rastrean costos en la nube pero pierden facturas de proveedores.',
+  problem_card1_title:'40% del gasto TI invisible',
+  problem_card1_desc:'Costos cloud rastreados, facturas perdidas en hojas de calculo.',
+  problem_card2_title:'\u20AC140k\u2013\u20AC430k de valor anual en riesgo',
+  problem_card2_desc:'Sin visibilidad en duplicados, cambios de tarifas y licencias sin usar.',
+  problem_card3_title:'Procesamiento manual de facturas',
+  problem_card3_desc:'5\u201310h/semana en clasificacion, codificacion y cumplimiento IVA.',
+  problem_card4_title:'Sin preparacion para cumplimiento',
+  problem_card4_desc:'Los mandatos e-factura requieren EN 16931 + PEPPOL. Incumplimiento = sanciones.',
+  problem_source:'Fuente: Informe Gartner FinOps 2025',
+  solution_label:'La Solucion',
+  solution_title:'Una plataforma. Visibilidad total. Cumplimiento completo.',
+  solution_subtitle:'Invoice Ops unifica visibilidad de costos con cumplimiento e-factura EN 16931.',
+  solution_flow1:'Ingesta de facturas y extraccion OCR',
+  solution_flow2:'Clasificacion y asignacion de costos',
+  solution_flow3:'Cumplimiento y exportacion PEPPOL',
+  solution_feat1_title:'Panel de proveedores unificado',
+  solution_feat1_desc:'Vea todos los costos de proveedores TI en una vista.',
+  solution_feat2_title:'Extraccion impulsada por IA',
+  solution_feat2_desc:'OCR con 90%+ de precision y puntuaciones de confianza.',
+  solution_feat3_title:'Clasificacion automatica',
+  solution_feat3_desc:'Facturas auto-categorizadas por proyecto, equipo, entorno.',
+  solution_feat4_title:'Deteccion de fraude y anomalias',
+  solution_feat4_desc:'La IA detecta duplicados, anomalias de tarifas y patrones sospechosos.',
+  solution_feat5_title:'Cumplimiento e-factura UE',
+  solution_feat5_desc:'Genere e-facturas conformes EN 16931. Firme, enrute via PEPPOL.',
+  how_label:'Como funciona', how_title:'Del correo a la e-factura conforme en 5 pasos',
+  how_subtitle:'Ciclo de vida automatizado de extremo a extremo.',
+  how_step1_label:'Paso 1', how_step1_title:'Ingerir', how_step1_desc:'Reciba facturas por correo, PDF, API o PEPPOL',
+  how_step2_label:'Paso 2', how_step2_title:'Extraer', how_step2_desc:'IA/OCR procesa con 90%+ de precision',
+  how_step3_label:'Paso 3', how_step3_title:'Clasificar', how_step3_desc:'Categorizacion auto por inductor de costo',
+  how_step4_label:'Paso 4', how_step4_title:'Asignar', how_step4_desc:'Etiquetado para cargo interno y centro de costos',
+  how_step5_label:'Paso 5', how_step5_title:'Detectar y cumplir', how_step5_desc:'Deteccion de fraude IA + e-facturas EN 16931',
+  ent_label:'Calidad Enterprise', ent_title:'Construido para escala, seguridad y cumplimiento',
+  ent_subtitle:'Todo lo que los equipos enterprise necesitan.',
+  ent_feat1_title:'Pista de auditoria y cumplimiento', ent_feat1_desc:'Registros de auditoria inmutables, retencion GDPR, SOC 2 Type II.',
+  ent_feat2_title:'Arquitectura API-First', ent_feat2_desc:'API RESTful con gestion de claves, webhooks, SLA 99.99%.',
+  ent_feat3_title:'Flujos de aprobacion', ent_feat3_desc:'Cadenas de aprobacion configurables, umbrales de monto, enrutamiento por rol.',
+  ent_feat4_title:'Integraciones ERP', ent_feat4_desc:'Conectores SAP, Oracle, Xero, QuickBooks. PEPPOL ready.',
+  ent_feat5_title:'Seguridad multi-tenant', ent_feat5_desc:'Aislamiento de tenants, cifrado AES-256, soporte SSO/SAML.',
+  ent_feat6_title:'Analitica avanzada', ent_feat6_desc:'Dashboards personalizados, predicciones, deteccion de anomalias.',
+  pricing_label:'Precios', pricing_title:'Dos pistas, una plataforma',
+  pricing_subtitle:'Elija su pista o combine ambas para cobertura completa.',
+  pricing_monthly:'Mensual', pricing_annual:'Anual', pricing_save:'Ahorre 20%',
+  pricing_finops_track:'Pista FinOps', pricing_finops_desc:'Visibilidad de costos de proveedores',
+  pricing_starter:'Starter', pricing_growth:'Growth', pricing_enterprise:'Enterprise',
+  pricing_mo_base:'/mes base', pricing_mo:'/mes', pricing_mo3:'/mes', pricing_mo4:'/mes',
+  pricing_custom:'A medida', pricing_custom2:'A medida',
+  pricing_finops_starter_detail:'+ \u20AC0,05 por factura \u00B7 Hasta 5.000 facturas/mes',
+  pricing_finops_growth_detail:'+ \u20AC0,03 por factura \u00B7 10k\u201320k facturas/mes',
+  pricing_get_started:'Comenzar gratis', pricing_start_trial:'Prueba gratuita', pricing_contact:'Contactar ventas',
+  pricing_compliance_track:'Pista cumplimiento e-factura', pricing_compliance_desc:'Listo para regulacion',
+  pricing_starter2:'Starter', pricing_growth2:'Growth', pricing_enterprise2:'Enterprise',
+  pricing_comp_starter_detail:'+ \u20AC0,02 por factura \u00B7 Cumplimiento EN 16931 completo',
+  pricing_comp_growth_detail:'+ \u20AC0,015 por factura',
+  pricing_start_trial2:'Prueba gratuita', pricing_start_trial3:'Prueba gratuita', pricing_contact2:'Contactar ventas',
+  pef_infra:'Infraestructura dedicada', pef_sla:'SLA personalizado', pef_sso:'SSO/SAML', pef_csm:'CSM dedicado', pef_onprem:'Opcion on-premise',
+  faq_title:'Preguntas frecuentes',
+  faq1_q:'Como funciona la prueba de 14 dias?',
+  faq1_a:'Acceso completo a todas las funciones durante 14 dias sin tarjeta de credito.',
+  faq2_q:'Puedo cambiar de plan en cualquier momento?',
+  faq2_a:'Si. Actualice o degrade en cualquier momento.',
+  faq3_q:'Mis datos estan seguros?',
+  faq3_a:'Absolutamente. Certificados SOC 2 Type II, GDPR e ISO 27001.',
+  faq4_q:'Ofrecen despliegue on-premise?',
+  faq4_a:'Si. Nuestro plan Enterprise incluye la opcion de despliegue on-premise.',
+  trust_backed:'Respaldado por <span>Y Combinator \u2022 Balderton Capital \u2022 Point Nine</span>',
+  cta_label:'Comenzar', cta_title:'Listo para ahorrar 140K\u20AC+ por ano?',
+  cta_subtitle:'Unase a los equipos visionarios que eliminaron puntos ciegos en facturas.',
+  cta_trial:'Inicie su prueba gratuita', cta_demo:'Reservar una demo',
+  footer_desc:'El sistema operativo para facturas de proveedores TI.',
+  footer_product:'Producto', footer_features:'Funciones', footer_pricing:'Precios', footer_integrations:'Integraciones',
+  footer_api_docs:'Docs API', footer_changelog:'Changelog',
+  footer_company:'Empresa', footer_about:'Acerca de', footer_careers:'Carreras', footer_blog:'Blog', footer_press:'Prensa',
+  footer_resources:'Recursos', footer_documentation:'Documentacion', footer_help:'Centro de ayuda', footer_status:'Estado', footer_community:'Comunidad',
+  footer_legal:'Legal', footer_privacy:'Privacidad', footer_terms:'Terminos', footer_dpa:'DPA', footer_cookies:'Cookies',
+  footer_text:'\u00A9 2026 Invoice Ops. Todos los derechos reservados. Conforme EN 16931 y PEPPOL.',
+  login_title:'Bienvenido de nuevo', login_subtitle:'Inicie sesion en su cuenta',
+  login_email_label:'Correo', login_email_placeholder:'usted@empresa.com',
+  login_password_label:'Contrasena', login_password_placeholder:'Ingrese su contrasena',
+  login_btn:'Iniciar sesion', login_footer_text:'No tiene cuenta?', login_footer_link:'Registrarse',
+  signup_title:'Comience su prueba gratuita', signup_subtitle:'14 dias gratis. No se requiere tarjeta.',
+  signup_name_label:'Nombre completo', signup_name_placeholder:'Juan Garcia',
+  signup_email_label:'Correo laboral', signup_email_placeholder:'juan@empresa.com',
+  signup_company_label:'Empresa', signup_company_placeholder:'Acme Corp',
+  signup_password_label:'Contrasena', signup_password_placeholder:'Cree una contrasena',
+  signup_btn:'Crear cuenta', signup_footer_text:'Ya tiene una cuenta?', signup_footer_link:'Iniciar sesion',
+  sidebar_dashboard:'Panel', sidebar_invoices:'Facturas', sidebar_vendors:'Proveedores',
+  sidebar_analytics:'Analitica', sidebar_compliance:'Cumplimiento', sidebar_approvals:'Aprobaciones',
+  sidebar_settings:'Configuracion', sidebar_audit:'Registro de auditoria', sidebar_apikeys:'Claves API',
+  sidebar_integrations:'Integraciones', sidebar_signout:'Cerrar sesion',
+  dash_search_placeholder:'Buscar facturas...',
+  kpi_total_invoices:'Total facturas', kpi_monthly_spend:'Gasto mensual',
+  kpi_savings:'Ahorros detectados', kpi_compliance:'Puntuacion cumplimiento', kpi_compliant_badge:'Conforme',
+  chart_spend_trend:'Tendencia de gasto mensual', chart_vendor_breakdown:'Desglose de proveedores',
+  chart_spend_category:'Gasto por categoria', chart_volume_trend:'Tendencia de volumen',
+  chart_savings:'Ahorros a lo largo del tiempo', chart_processing:'Tiempo de procesamiento (dias prom.)',
+  table_recent_invoices:'Facturas recientes', table_all_invoices:'Todas las facturas',
+  th_invoice:'Factura', th_invoice_id:'ID Factura', th_vendor:'Proveedor', th_amount:'Monto',
+  th_date:'Fecha', th_status:'Estado', th_category:'Categoria', th_confidence:'Confianza',
+  btn_upload:'Subir', btn_upload_invoice:'Subir factura',
+  status_processed:'Procesada', status_pending:'Pendiente', status_flagged:'Marcada',
+  filter_all_status:'Todos los estados', filter_processed:'Procesada', filter_pending:'Pendiente', filter_flagged:'Marcada',
+  cat_cloud:'Nube', cat_monitoring:'Monitoreo', cat_data:'Datos', cat_streaming:'Streaming',
+  cat_database:'Base de datos', cat_devops:'DevOps', cat_search:'Busqueda',
+  vendors_all_title:'Todos los proveedores', btn_add_vendor:'Agregar proveedor',
+  vendor_invoices:'facturas',
+  vendor_cat_cloud:'Infraestructura en la nube', vendor_cat_monitoring:'Monitoreo y observabilidad',
+  vendor_cat_data:'Almacen de datos', vendor_cat_streaming:'Streaming de datos',
+  vendor_cat_database:'Base de datos', vendor_cat_devops:'DevOps y seguridad',
+  vendor_cat_search:'Busqueda y analitica', vendor_cat_cdn:'CDN y seguridad',
+  comp_en_title:'Cumplimiento EN 16931', comp_score:'Puntuacion cumplimiento',
+  comp_xml:'Validacion de esquema XML', comp_fields:'Completitud de campos obligatorios',
+  comp_vat:'Exactitud del calculo IVA', comp_sig:'Firma digital (XAdES)', comp_crossborder:'Mapeo IVA transfronterizo',
+  comp_peppol_title:'Preparacion PEPPOL', comp_readiness:'Puntuacion de preparacion',
+  comp_bis:'Formato PEPPOL BIS 3.0', comp_access:'Registro punto de acceso',
+  comp_smp:'Consulta SMP/SML', comp_endpoint:'Prueba endpoint produccion', comp_worm:'Integracion archivo WORM',
+  comp_timeline_title:'Cronograma regulatorio',
+  comp_de_date:'ENE 2025 \u2014 ACTIVO', comp_de_title:'E-factura B2B Alemania',
+  comp_de_desc:'Recepcion obligatoria de e-facturas para transacciones B2B.',
+  comp_fr_date:'SEP 2026 \u2014 PROXIMO', comp_fr_title:'Mandato e-facturacion Francia',
+  comp_fr_desc:'Todas las facturas B2B deben emitirse como e-facturas estructuradas.',
+  comp_eu_date:'2028 \u2014 PLANIFICADO', comp_eu_title:'Regulacion ViDA de la UE',
+  comp_eu_desc:'Reporte digital y e-facturacion en tiempo real en toda la UE.',
+  approvals_rules_title:'Reglas de aprobacion', btn_add_rule:'Agregar regla',
+  rule1_condition:'Monto > 10.000\u20AC', rule1_action:'Requiere aprobacion del CFO',
+  rule2_condition:'Nuevo proveedor', rule2_action:'Requiere aprobacion de compras',
+  rule3_condition:'Puntuacion de confianza < 80%', rule3_action:'Requiere revision manual',
+  rule_active:'Activo', approvals_pending_title:'Aprobaciones pendientes',
+  pending1_desc:'15.340\u20AC \u00B7 Disparador: Monto > 10.000\u20AC \u00B7 Esperando CFO',
+  pending2_desc:'3.200\u20AC \u00B7 Disparador: Confianza < 80% (67%) \u00B7 Esperando revision',
+  pending3_desc:'7.800\u20AC \u00B7 Disparador: Nuevo proveedor \u00B7 Esperando compras',
+  btn_approve:'Aprobar', btn_reject:'Rechazar',
+  settings_account:'Configuracion de cuenta', settings_company_name:'Nombre de empresa',
+  settings_account_email:'Correo de cuenta', settings_vat:'Numero de IVA',
+  settings_processing:'Procesamiento de facturas',
+  settings_autoclassify:'Clasificar facturas automaticamente',
+  settings_autoclassify_desc:'Categorizar automaticamente usando IA',
+  settings_duplicate:'Deteccion de duplicados',
+  settings_duplicate_desc:'Marcar posibles duplicados antes del procesamiento',
+  settings_autoapprove:'Auto-aprobar bajo umbral',
+  settings_autoapprove_desc:'Auto-aprobar facturas bajo 500\u20AC con 90%+ confianza',
+  settings_compliance:'Cumplimiento y exportacion',
+  settings_en_gen:'Generacion e-factura EN 16931',
+  settings_en_gen_desc:'Auto-generar e-facturas conformes',
+  settings_peppol:'Enrutamiento PEPPOL',
+  settings_peppol_desc:'Enrutar via red PEPPOL',
+  settings_worm:'Archivado WORM',
+  settings_worm_desc:'Archivar con cumplimiento escritura-unica-lectura-multiple',
+  settings_subscription:'Suscripcion', settings_current_plan:'Plan actual',
+  settings_plan_value:'FinOps Growth + Cumplimiento Starter',
+  btn_edit:'Editar', btn_upgrade:'Mejorar plan',
+  audit_title:'Registro de auditoria', audit_filter_all:'Todas las acciones', audit_filter_login:'Inicio sesion',
+  audit_filter_create:'Creacion', audit_filter_update:'Actualizacion', audit_filter_delete:'Eliminacion',
+  audit_th_time:'Marca de tiempo', audit_th_user:'Usuario', audit_th_action:'Accion',
+  audit_th_entity:'Entidad', audit_th_details:'Detalles',
+  apikeys_title:'Claves API', btn_generate_key:'Generar nueva clave',
+  apikey_perms:'Permisos:', apikey_last_used:'Ultimo uso:', apikey_active:'Activa', apikey_inactive:'Inactiva',
+  integrations_title:'Integraciones',
+  int_sap_desc:'Integracion ERP empresarial', int_oracle_desc:'Conector ERP Cloud',
+  int_xero_desc:'Software contable', int_qb_desc:'Contabilidad PYME',
+  int_slack_desc:'Notificaciones y alertas', int_teams_desc:'Alertas colaboracion',
+  int_peppol_desc:'Enrutamiento e-factura', int_email_desc:'Ingesta auto desde email',
+  int_connected:'Conectado', int_available:'Disponible'
+}
+};
+
+// === LANGUAGE SYSTEM ===
+let currentLang = localStorage.getItem('invoice-ops-lang') || 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('invoice-ops-lang', lang);
+  document.documentElement.lang = lang;
+  const t = T[lang];
+  if (!t) return;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) {
+      if (key === 'hero_headline' || key === 'trust_backed') {
+        el.innerHTML = t[key];
+      } else {
+        el.textContent = t[key];
+      }
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (t[key] !== undefined) el.placeholder = t[key];
+  });
+  document.body.className = document.body.className.replace(/featured-popular-\w+/g, '');
+  document.body.classList.add('featured-popular-' + lang);
+  const flags = {en:'EN', fr:'FR', es:'ES'};
+  ['landing','login','signup','dashboard'].forEach(id => {
+    const flag = document.getElementById('lang-flag-' + id);
+    if (flag) flag.textContent = flags[lang];
+    const dd = document.getElementById('lang-dropdown-' + id);
+    if (dd) {
+      dd.querySelectorAll('.lang-option').forEach(opt => {
+        opt.classList.toggle('active', opt.getAttribute('data-lang') === lang);
+      });
+      dd.classList.remove('open');
+    }
+  });
+  updateDashTitle();
+  renderVendors();
+}
+
+function updateDashTitle() {
+  const active = document.querySelector('.sidebar-nav a.active');
+  if (active) {
+    const view = active.getAttribute('data-dash');
+    const titleKeys = {overview:'sidebar_dashboard',invoices:'sidebar_invoices',vendors:'sidebar_vendors',analytics:'sidebar_analytics',compliance:'sidebar_compliance',approvals:'sidebar_approvals',settings:'sidebar_settings',audit:'sidebar_audit',apikeys:'sidebar_apikeys',integrations:'sidebar_integrations'};
+    const key = titleKeys[view];
+    if (key && T[currentLang][key]) {
+      document.getElementById('dash-page-title').textContent = T[currentLang][key];
+    }
+  }
+}
+
+function toggleLangDropdown(id) {
+  const dd = document.getElementById('lang-dropdown-' + id);
+  if (!dd) return;
+  document.querySelectorAll('.lang-dropdown').forEach(d => { if (d !== dd) d.classList.remove('open'); });
+  dd.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.lang-switcher')) {
+    document.querySelectorAll('.lang-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// === ROI CALCULATOR ===
+function updateROI() {
+  const invoices = parseInt(document.getElementById('roi-invoices').value);
+  const avg = parseInt(document.getElementById('roi-avg').value);
+  const hours = parseInt(document.getElementById('roi-hours').value);
+  document.getElementById('roi-invoices-val').textContent = invoices.toLocaleString();
+  document.getElementById('roi-avg-val').textContent = '\u20AC' + avg.toLocaleString();
+  document.getElementById('roi-hours-val').textContent = hours;
+  const timeSaved = hours * 48 * 75;
+  const anomaly = invoices * 12 * avg * 0.02;
+  const compliance = 50000;
+  const total = timeSaved + anomaly + compliance;
+  document.getElementById('roi-time-saved').textContent = '\u20AC' + timeSaved.toLocaleString();
+  document.getElementById('roi-anomaly').textContent = '\u20AC' + anomaly.toLocaleString();
+  document.getElementById('roi-compliance').textContent = '\u20AC' + compliance.toLocaleString();
+  document.getElementById('roi-total').textContent = '\u20AC' + total.toLocaleString();
+}
+
+// === PRICING TOGGLE ===
+let isAnnual = false;
+function togglePricingPeriod() {
+  isAnnual = !isAnnual;
+  const pill = document.getElementById('pricing-toggle');
+  pill.classList.toggle('annual', isAnnual);
+  document.getElementById('pricing-monthly-label').classList.toggle('active-toggle', !isAnnual);
+  document.getElementById('pricing-annual-label').classList.toggle('active-toggle', isAnnual);
+  document.querySelectorAll('.price-amount').forEach(el => {
+    const monthly = parseInt(el.getAttribute('data-monthly'));
+    const annual = parseInt(el.getAttribute('data-annual'));
+    const val = isAnnual ? annual : monthly;
+    el.textContent = '\u20AC' + val.toLocaleString();
+  });
+}
+
+// === API CLIENT ===
+const API = {
+  token: localStorage.getItem('io_token'),
+  base: '/api',
+  async request(method, path, body, isFormData) {
+    const headers = {};
+    if (this.token) headers['Authorization'] = 'Bearer ' + this.token;
+    if (!isFormData) headers['Content-Type'] = 'application/json';
+    const opts = { method, headers };
+    if (body) opts.body = isFormData ? body : JSON.stringify(body);
+    const res = await fetch(this.base + path, opts);
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status === 401) { this.logout(); }
+      throw { status: res.status, ...data };
+    }
+    return data;
+  },
+  get(path) { return this.request('GET', path); },
+  post(path, body, isFormData) { return this.request('POST', path, body, isFormData); },
+  patch(path, body) { return this.request('PATCH', path, body); },
+  del(path) { return this.request('DELETE', path); },
+  setToken(t) { this.token = t; localStorage.setItem('io_token', t); },
+  logout() { this.token = null; localStorage.removeItem('io_token'); showPage('landing'); }
+};
+
+// === AUTH HANDLERS ===
+async function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  try {
+    const data = await API.post('/auth/login', { email, password });
+    API.setToken(data.token);
+    window._currentUser = data.user;
+    window._currentTenant = data.tenant;
+    showPage('dashboard');
+  } catch (e) {
+    errEl.textContent = e.error || 'Login failed';
+  }
+}
+
+async function handleSignup() {
+  const fullName = document.getElementById('signup-name').value;
+  const email = document.getElementById('signup-email').value;
+  const companyName = document.getElementById('signup-company').value;
+  const password = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('signup-error');
+  errEl.textContent = '';
+  try {
+    const data = await API.post('/auth/register', { email, password, fullName, companyName });
+    API.setToken(data.token);
+    window._currentUser = data.user;
+    window._currentTenant = data.tenant;
+    showPage('dashboard');
+  } catch (e) {
+    errEl.textContent = e.error || 'Signup failed';
+  }
+}
+
+async function handleUploadInvoice() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.png,.jpg,.jpeg';
+  input.onchange = async () => {
+    if (!input.files[0]) return;
+    const fd = new FormData();
+    fd.append('file', input.files[0]);
+    try {
+      await API.post('/invoices', fd, true);
+      loadDashboardData();
+    } catch (e) {
+      console.error('Upload failed:', e);
+    }
+  };
+  input.click();
+}
+
+// === LOAD REAL DATA ===
+async function loadDashboardData() {
+  try {
+    const kpi = await API.get('/analytics/overview');
+    const kpiValues = document.querySelectorAll('.kpi-value');
+    if(kpiValues[0]) kpiValues[0].textContent = (kpi.totalInvoices || 0).toLocaleString();
+    if(kpiValues[1]) kpiValues[1].textContent = '\u20AC' + ((kpi.monthlySpend || 0) / 1000).toFixed(0) + 'K';
+    if(kpiValues[2]) kpiValues[2].textContent = '\u20AC' + ((kpi.savingsDetected || 0) / 1000).toFixed(1) + 'K';
+    if(kpiValues[3]) kpiValues[3].textContent = (kpi.complianceScore || 0) + '%';
+    const invData = await API.get('/invoices?limit=5&sort=created_at&order=desc');
+    populateInvoiceTable('dash-overview', invData.items);
+    const allInv = await API.get('/invoices?limit=20&sort=created_at&order=desc');
+    populateInvoiceTable('dash-invoices', allInv.items);
+    const vendors = await API.get('/vendors');
+    renderVendorsFromAPI(vendors);
+    if (window._currentUser) {
+      const initials = window._currentUser.fullName.split(' ').map(n=>n[0]).join('').toUpperCase();
+      document.querySelectorAll('.avatar').forEach(a => a.textContent = initials);
+    }
+  } catch(e) {
+    console.error('Dashboard data load error:', e);
+    initCharts();
+    renderVendors();
+  }
+}
+
+function populateInvoiceTable(pageId, invoices) {
+  const page = document.getElementById(pageId);
+  if (!page) return;
+  const tbody = page.querySelector('tbody');
+  if (!tbody || !invoices || invoices.length === 0) return;
+  const t = T[currentLang];
+  const statusLabels = { processed: t.status_processed, pending: t.status_pending, flagged: t.status_flagged };
+  tbody.innerHTML = invoices.map(inv => {
+    const statusClass = 'status-' + (inv.status || 'pending');
+    const conf = Math.round(inv.confidence_score || 0);
+    const confClass = conf >= 90 ? 'badge-green' : conf >= 80 ? 'badge-orange' : 'badge-red';
+    return '<tr>' +
+      '<td style="font-family:var(--font-mono);font-size:0.82rem">' + inv.invoice_number + '</td>' +
+      '<td>' + (inv.vendor_name || 'Unknown') + '</td>' +
+      (pageId === 'dash-invoices' ? '<td><span class="badge badge-cyan">' + (inv.category || 'other') + '</span></td>' : '') +
+      '<td style="font-family:var(--font-mono)">\u20AC' + (inv.amount || 0).toLocaleString('de-DE', {minimumFractionDigits:2}) + '</td>' +
+      '<td style="color:var(--text-secondary)">' + (inv.date || '') + '</td>' +
+      (pageId === 'dash-invoices' ? '<td><span class="badge ' + confClass + '">' + conf + '%</span></td>' : '') +
+      '<td class="' + statusClass + '"><span class="status-dot"></span>' + (statusLabels[inv.status] || inv.status) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderVendorsFromAPI(vendors) {
+  const grid = document.getElementById('vendors-grid');
+  if (!grid || !vendors) return;
+  const t = T[currentLang];
+  const catMap = { cloud:'vendor_cat_cloud', monitoring:'vendor_cat_monitoring', data:'vendor_cat_data',
+    streaming:'vendor_cat_streaming', database:'vendor_cat_database', devops:'vendor_cat_devops',
+    search:'vendor_cat_search', cdn:'vendor_cat_cdn' };
+  grid.innerHTML = vendors.map(v =>
+    '<div class="vendor-card">' +
+      '<div class="vendor-icon" style="background:' + v.icon_color + '20;color:' + v.icon_color + '">' + (v.icon_letter || v.name[0]) + '</div>' +
+      '<h4>' + v.name + '</h4>' +
+      '<div class="vendor-cat">' + (t[catMap[v.category]] || v.category || 'Other') + '</div>' +
+      '<div class="vendor-meta">' +
+        '<span class="amount">\u20AC' + (v.total_spend || 0).toLocaleString('de-DE', {minimumFractionDigits:0}) + '</span>' +
+        '<span class="invoices">' + (v.invoice_count || 0) + ' ' + t.vendor_invoices + '</span>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// === PAGE ROUTING ===
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const target = document.getElementById(page+'-page');
+  if(target){target.classList.add('active');window.scrollTo(0,0)}
+  if(page==='dashboard'){
+    if(API.token) { loadDashboardData(); }
+    initCharts();renderVendors();
+  }
+}
+
+function switchDash(el,view){
+  event.preventDefault();
+  document.querySelectorAll('.sidebar-nav a').forEach(a=>a.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.dash-page').forEach(p=>p.style.display='none');
+  const target=document.getElementById('dash-'+view);
+  if(target)target.style.display='block';
+  updateDashTitle();
+  if(view==='analytics')initAnalyticsCharts();
+  if(view==='vendors')renderVendors();
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// === NAV SCROLL ===
+window.addEventListener('scroll',()=>{
+  const nav=document.getElementById('nav');
+  if(nav)nav.classList.toggle('scrolled',window.scrollY>50);
+});
+
+// === VENDORS DATA ===
+const vendorsData=[
+  {name:'AWS',catKey:'vendor_cat_cloud',icon:'A',color:'#ff9900',spend:'\u20AC124,580',invoices:48},
+  {name:'Google Cloud',catKey:'vendor_cat_cloud',icon:'G',color:'#4285f4',spend:'\u20AC89,200',invoices:36},
+  {name:'Datadog',catKey:'vendor_cat_monitoring',icon:'D',color:'#632ca6',spend:'\u20AC42,800',invoices:24},
+  {name:'Snowflake',catKey:'vendor_cat_data',icon:'S',color:'#29b5e8',spend:'\u20AC68,400',invoices:18},
+  {name:'Confluent',catKey:'vendor_cat_streaming',icon:'C',color:'#1b1464',spend:'\u20AC28,600',invoices:12},
+  {name:'MongoDB',catKey:'vendor_cat_database',icon:'M',color:'#00ed64',spend:'\u20AC35,200',invoices:15},
+  {name:'HashiCorp',catKey:'vendor_cat_devops',icon:'H',color:'#000',spend:'\u20AC22,100',invoices:9},
+  {name:'Elastic',catKey:'vendor_cat_search',icon:'E',color:'#fed10a',spend:'\u20AC19,800',invoices:8},
+  {name:'Cloudflare',catKey:'vendor_cat_cdn',icon:'C',color:'#f38020',spend:'\u20AC12,400',invoices:6},
+];
+
+function renderVendors(){
+  const grid=document.getElementById('vendors-grid');
+  if(!grid)return;
+  const t = T[currentLang];
+  grid.innerHTML=vendorsData.map(v=>
+    '<div class="vendor-card">' +
+      '<div class="vendor-icon" style="background:' + v.color + '20;color:' + v.color + '">' + v.icon + '</div>' +
+      '<h4>' + v.name + '</h4>' +
+      '<div class="vendor-cat">' + (t[v.catKey] || v.catKey) + '</div>' +
+      '<div class="vendor-meta">' +
+        '<span class="amount">' + v.spend + '</span>' +
+        '<span class="invoices">' + v.invoices + ' ' + (t.vendor_invoices || 'invoices') + '</span>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// === CHARTS ===
+let chartsInitialized=false;
+const chartDefaults={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(30,45,74,0.3)'},ticks:{color:'#5a6d8a',font:{size:11}}},y:{grid:{color:'rgba(30,45,74,0.3)'},ticks:{color:'#5a6d8a',font:{size:11}}}}};
+
+function initCharts(){
+  if(chartsInitialized)return;chartsInitialized=true;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const spendCtx=document.getElementById('spendChart');
+  if(spendCtx)new Chart(spendCtx,{type:'line',data:{labels:months,datasets:[{label:'Spend',data:[980,1050,1120,1080,1150,1200,1180,1250,1300,1280,1350,1200],borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},options:{...chartDefaults}});
+  const vendorCtx=document.getElementById('vendorChart');
+  if(vendorCtx)new Chart(vendorCtx,{type:'doughnut',data:{labels:['AWS','GCP','Datadog','Snowflake','Other'],datasets:[{data:[35,22,15,18,10],backgroundColor:['#ff9900','#4285f4','#632ca6','#29b5e8','#1e2d4a'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8899b4',padding:12,font:{size:11}}}},cutout:'65%'}});
+}
+
+let analyticsChartsInit=false;
+function initAnalyticsCharts(){
+  if(analyticsChartsInit)return;analyticsChartsInit=true;
+  const months=['Jan','Feb','Mar','Apr','May','Jun'];
+  const catCtx=document.getElementById('categoryChart');
+  if(catCtx)new Chart(catCtx,{type:'bar',data:{labels:['Cloud','Monitoring','Data','DevOps','Security','Other'],datasets:[{data:[280,95,120,65,45,35],backgroundColor:['#00d4ff','#8b5cf6','#10b981','#f59e0b','#ef4444','#3b82f6'],borderRadius:6,borderSkipped:false}]},options:{...chartDefaults,plugins:{legend:{display:false}}}});
+  const volCtx=document.getElementById('volumeChart');
+  if(volCtx)new Chart(volCtx,{type:'line',data:{labels:months,datasets:[{label:'Invoices',data:[620,710,780,830,900,870],borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},options:{...chartDefaults}});
+  const savCtx=document.getElementById('savingsChart');
+  if(savCtx)new Chart(savCtx,{type:'bar',data:{labels:months,datasets:[{label:'Savings',data:[12,18,22,28,35,47],backgroundColor:'#10b981',borderRadius:6,borderSkipped:false}]},options:{...chartDefaults}});
+  const procCtx=document.getElementById('processingChart');
+  if(procCtx)new Chart(procCtx,{type:'line',data:{labels:months,datasets:[{label:'Avg Days',data:[4.2,3.8,3.1,2.5,1.8,1.2],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#f59e0b',borderWidth:2}]},options:{...chartDefaults}});
+}
+
+// === INTERSECTION OBSERVER ===
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.style.animationPlayState='running';observer.unobserve(e.target)}});
+},{threshold:0.1});
+document.querySelectorAll('.animate-in').forEach(el=>{el.style.animationPlayState='paused';observer.observe(el)});
+
+// === INIT ===
+setLang(currentLang);
+updateROI();
+</script>
+</body>
+</html>
